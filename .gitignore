@@ -110,3 +110,6 @@ sftp-config.json
 !.vscode/launch.json
 !.vscode/extensions.json
 .history
+
+# PWS Credential
+credential.txt
