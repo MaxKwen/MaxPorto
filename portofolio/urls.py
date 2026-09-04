@@ -22,4 +22,5 @@ from portofolio.views import landing_page
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('', landing_page, name='landing_page'),
+    path('id/', landing_page, {'language': 'id'}, name='landing_page_id'),
 ]
