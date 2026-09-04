@@ -73,6 +73,11 @@ body::before {
 .site-header nav a:focus-visible {
   color: var(--bright);
 }
+
+a:focus-visible {
+  outline: 3px solid var(--bright);
+  outline-offset: 4px;
+}
 .section {
   width: min(1100px, 100%);
   min-height: 75vh;
@@ -169,6 +174,21 @@ h3 {
 .project-card a:hover {
   border-color: var(--bright);
 }
+
+.hero-links a,
+.project-card a,
+.card-grid article {
+  transition:
+    transform 160ms ease,
+    border-color 160ms ease,
+    background-color 160ms ease;
+}
+
+.hero-links a:hover,
+.project-card a:hover,
+.card-grid article:hover {
+  transform: translateY(-3px);
+}
 .hero-links .primary {
   color: var(--bg);
   background: var(--bright);
@@ -228,5 +248,21 @@ h3 {
   }
   .section {
     min-height: auto;
+  }
+
+  .site-header nav {
+    row-gap: 0.75rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  *,
+  *::before,
+  *::after {
+    transition-duration: 0.01ms !important;
   }
 }
