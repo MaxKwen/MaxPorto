@@ -1,33 +1,120 @@
 {% load static %}
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="Professional portfolio of Maximus Quinn Hertada.">
-  <title>Maximus Quinn Hertada — Portfolio</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="{% static 'css/style.css' %}">
-</head>
-<body>
-  <header class="site-header">
-    <a class="brand" href="#home">MQH</a>
-    <nav aria-label="Primary navigation">
-      <a href="#experience">Experience</a><a href="#education">Education</a><a href="#projects">Project</a><a href="#achievements">Achievements</a><a href="#contact">Contact</a>
-    </nav>
-  </header>
-  <main>
-    <section class="hero section" id="home">
-      <div class="hero-copy"><p class="eyebrow">Professional portfolio</p><h1>Maximus<br>Quinn Hertada</h1><p class="role">Data Science Enthusiast</p><p class="intro">Exploring thoughtful solutions at the intersection of data, security, and technology.</p><div class="hero-links"><a href="https://github.com/MaxKwen" target="_blank" rel="noreferrer">GitHub ↗</a><a href="https://www.linkedin.com/in/maximus-hertada/" target="_blank" rel="noreferrer">LinkedIn ↗</a></div></div>
-      <div class="portrait-frame"><img src="{% static 'img/max.jpeg' %}" alt="Portrait of Maximus Quinn Hertada"></div>
-    </section>
-    <section class="section" id="experience"><p class="eyebrow">01 / Experience</p><h2>Experience</h2><p class="section-lead">Organization, internship, and committee experience will be added here.</p><div class="card-grid"><article>Organization<br><strong>Coming soon</strong></article><article>Internship<br><strong>Coming soon</strong></article><article>Committee<br><strong>Coming soon</strong></article></div></section>
-    <section class="section" id="education"><p class="eyebrow">02 / Education</p><h2>Education</h2><p class="section-lead">Education history and relevant learning journey will be added here.</p></section>
-    <section class="section" id="projects"><p class="eyebrow">03 / Project</p><h2>Project</h2><article class="project-card"><span>Backend / Django</span><h3>Kusut-Kusut</h3><p>A Django backend project replicating core X.com interactions: authentication, posts, replies, and likes.</p><a href="https://github.com/MaxKwen/kusutkusut-backend" target="_blank" rel="noreferrer">View on GitHub ↗</a></article></section>
-    <section class="section" id="achievements"><p class="eyebrow">04 / Achievements</p><h2>Achievements</h2><div class="card-grid"><article>OSN Informatics<br><strong>National finalist</strong></article><article>AMO<br><strong>Bronze medal</strong></article><article>Publication<br><strong>Scientific publication co-author</strong></article></div></section>
-    <section class="section" id="contact"><p class="eyebrow">05 / Contact</p><h2>Let’s connect.</h2><p class="section-lead">Open to professional conversations and collaboration.</p><div class="hero-links"><a href="mailto:maximus.quinn@gmail.com">maximus.quinn@gmail.com</a><a class="primary" href="mailto:maximus.quinn@gmail.com?subject=Portfolio%20enquiry">Contact Me</a></div></section>
-  </main>
-</body>
+<!doctype html>
+<html lang="{{ copy.language }}">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="description"
+      content="Professional portfolio of Maximus Quinn Hertada."
+    />
+    <title>Maximus Quinn Hertada - Portfolio</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Space+Grotesk:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="{% static 'css/style.css' %}" />
+  </head>
+  <body>
+    <header class="site-header">
+      <a class="brand" href="#home">MQH</a>
+      <nav aria-label="Primary navigation">
+        <a href="#experience">{{ copy.experience }}</a
+        ><a href="#education">{{ copy.education }}</a
+        ><a href="#projects">{{ copy.project }}</a
+        ><a href="#achievements">{{ copy.achievements }}</a
+        ><a href="#contact">Contact</a
+        ><a class="language-link" href="{{ copy.switch_url }}"
+          >{{ copy.switch_label }}</a
+        >
+      </nav>
+    </header>
+    <main>
+      <section class="hero section" id="home">
+        <div class="hero-copy">
+          <p class="eyebrow">{{ copy.portfolio }}</p>
+          <h1>Maximus<br />Quinn Hertada</h1>
+          <p class="role">{{ copy.role }}</p>
+          <p class="intro">{{ copy.intro }}</p>
+          <div class="hero-links">
+            <a
+              href="https://github.com/MaxKwen"
+              target="_blank"
+              rel="noreferrer"
+              >GitHub</a
+            ><a
+              href="https://www.linkedin.com/in/maximus-hertada/"
+              target="_blank"
+              rel="noreferrer"
+              >LinkedIn</a
+            >
+          </div>
+        </div>
+        <div class="portrait-frame">
+          <img
+            src="{% static 'img/max.jpeg' %}"
+            alt="Portrait of Maximus Quinn Hertada"
+          />
+        </div>
+      </section>
+      <section class="section" id="experience">
+        <p class="eyebrow">01 / {{ copy.experience }}</p>
+        <h2>{{ copy.experience }}</h2>
+        <p class="section-lead">{{ copy.experience_text }}</p>
+        <div class="card-grid">
+          <article>Organization<br /><strong>Coming soon</strong></article>
+          <article>Internship<br /><strong>Coming soon</strong></article>
+          <article>Committee<br /><strong>Coming soon</strong></article>
+        </div>
+      </section>
+      <section class="section" id="education">
+        <p class="eyebrow">02 / {{ copy.education }}</p>
+        <h2>{{ copy.education }}</h2>
+        <p class="section-lead">{{ copy.education_text }}</p>
+      </section>
+      <section class="section" id="projects">
+        <p class="eyebrow">03 / {{ copy.project }}</p>
+        <h2>{{ copy.project }}</h2>
+        <article class="project-card">
+          <span>Backend / Django</span>
+          <h3>Kusut-Kusut</h3>
+          <p>{{ copy.project_text }}</p>
+          <a
+            href="https://github.com/MaxKwen/kusutkusut-backend"
+            target="_blank"
+            rel="noreferrer"
+            >{{ copy.github }}</a
+          >
+        </article>
+      </section>
+      <section class="section" id="achievements">
+        <p class="eyebrow">04 / {{ copy.achievements }}</p>
+        <h2>{{ copy.achievements }}</h2>
+        <div class="card-grid">
+          <article>
+            OSN Informatics<br /><strong>National finalist</strong>
+          </article>
+          <article>AMO<br /><strong>Bronze medal</strong></article>
+          <article>
+            Publication<br /><strong>Scientific publication co-author</strong>
+          </article>
+        </div>
+      </section>
+      <section class="section" id="contact">
+        <p class="eyebrow">05 / Contact</p>
+        <h2>{{ copy.contact }}</h2>
+        <p class="section-lead">{{ copy.contact_text }}</p>
+        <div class="hero-links">
+          <a href="mailto:maximus.quinn@gmail.com">maximus.quinn@gmail.com</a
+          ><a
+            class="primary"
+            href="mailto:maximus.quinn@gmail.com?subject=Portfolio%20enquiry"
+            >{{ copy.contact_button }}</a
+          >
+        </div>
+      </section>
+    </main>
+  </body>
 </html>
