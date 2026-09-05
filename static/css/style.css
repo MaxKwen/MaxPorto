@@ -110,10 +110,14 @@ body::before {
 .site-header nav {
   display: flex;
   flex-wrap: wrap;
+  align-items: center;
   justify-content: flex-end;
   gap: clamp(0.6rem, 2vw, 1.5rem);
 }
 .site-header nav a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 1.8rem;
   color: var(--muted);
   font-size: 0.8rem;
   text-decoration: none;
@@ -128,11 +132,29 @@ a:focus-visible {
   outline-offset: 4px;
 }
 .section {
+  position: relative;
   width: min(1100px, 100%);
   min-height: 75vh;
   margin: auto;
   padding: clamp(4rem, 10vw, 8rem) clamp(1.25rem, 5vw, 5rem);
   scroll-margin-top: 4rem;
+}
+
+.section:not(.hero)::before {
+  position: absolute;
+  top: 0;
+  right: clamp(1.25rem, 5vw, 5rem);
+  left: clamp(1.25rem, 5vw, 5rem);
+  height: 1px;
+  content: "";
+  background: linear-gradient(
+    90deg,
+    transparent,
+    var(--accent),
+    var(--bright),
+    transparent
+  );
+  opacity: 0.72;
 }
 .hero {
   display: grid;
@@ -165,7 +187,7 @@ h1,
 h2,
 h3 {
   margin: 0;
-  line-height: 0.9;
+  line-height: 1.05;
   letter-spacing: -0.065em;
 }
 h1 {
@@ -173,6 +195,10 @@ h1 {
 }
 h2 {
   font-size: clamp(3rem, 7vw, 5.6rem);
+  color: transparent;
+  background: linear-gradient(110deg, var(--text), var(--bright), var(--accent));
+  -webkit-background-clip: text;
+  background-clip: text;
 }
 h3 {
   font-size: 1.6rem;
