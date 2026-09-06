@@ -232,6 +232,7 @@ h3 {
 }
 .hero-links {
   display: flex;
+  align-items: center;
   flex-wrap: wrap;
   gap: 0.7rem;
   margin-top: 2rem;
@@ -272,13 +273,18 @@ h3 {
 
 .hero-links .social-icon {
   display: inline-flex;
+  flex: 0 0 1.35rem;
+  width: 1.35rem;
+  height: 1.35rem;
   align-items: center;
+  align-self: center;
   justify-content: center;
   border: 0;
   border-radius: 0;
   padding: 0;
   color: var(--bright);
   background: transparent;
+  line-height: 0;
 }
 
 .social-icon img {
@@ -288,15 +294,36 @@ h3 {
 }
 
 .social-icon svg {
-  width: 1.2rem;
-  height: 1.2rem;
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.social-icon[title="GitHub"] {
+  background: url("../img/github.png") center / contain no-repeat;
+}
+
+.social-icon[title="LinkedIn"] {
+  background: url("../img/linkedin.png") center calc(50% - 1px) / contain no-repeat;
+}
+
+/* The supplied Gmail SVG has larger transparent margins than the PNG logos. */
+.social-icon[title="Email"] svg {
+  width: 1.55rem;
+  height: 1.55rem;
+  transform: translateY(-0.05rem);
+}
+
+.social-icon[title="GitHub"] svg,
+.social-icon[title="LinkedIn"] svg {
+  display: none;
 }
 
 .hero-links .social-icon:hover,
 .hero-links .social-icon:focus-visible {
   border-color: transparent;
   color: var(--text);
-  background: transparent;
+  background-color: transparent;
 }
 .card-grid {
   display: grid;
@@ -351,6 +378,84 @@ h3 {
   font-family: var(--mono);
   font-size: 0.78rem;
 }
+
+.skills-catalog input {
+  position: absolute;
+  opacity: 0;
+}
+
+.skill-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  margin-top: 2rem;
+}
+
+.skill-filters label {
+  padding: 0.45rem 0.8rem;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  color: var(--muted);
+  cursor: pointer;
+}
+
+.skill-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr));
+  gap: 1.25rem;
+  margin-top: 1.25rem;
+}
+
+.skill-card {
+  display: grid;
+  min-height: 10rem;
+  place-items: center;
+  align-content: center;
+  gap: 0.9rem;
+  padding: 1rem;
+  border: 1px solid rgba(148, 191, 255, 0.48);
+  border-radius: 1rem;
+  background: linear-gradient(145deg, rgba(41, 82, 159, 0.52), var(--surface));
+  box-shadow: 0 0.8rem 2rem rgba(0, 0, 0, 0.16);
+  transition: transform 160ms ease, border-color 160ms ease, box-shadow 160ms ease;
+}
+
+.skill-card:hover {
+  transform: translateY(-4px);
+  border-color: var(--bright);
+  box-shadow: 0 1rem 2.5rem rgba(75, 141, 255, 0.2);
+}
+
+.skill-symbol {
+  display: grid;
+  width: 3rem;
+  height: 3rem;
+  place-items: center;
+  border: 1px solid var(--accent);
+  border-radius: 0.8rem;
+  color: var(--bright);
+  font-family: var(--mono);
+  font-weight: 500;
+}
+
+.skill-card img {
+  width: 3.2rem;
+  height: 3.2rem;
+  object-fit: contain;
+}
+
+.skill-card strong { text-align: center; }
+
+.skills-catalog:has(#filter-language:checked) .skill-card:not([data-category="language"]),
+.skills-catalog:has(#filter-tool:checked) .skill-card:not([data-category="tool"]),
+.skills-catalog:has(#filter-backend:checked) .skill-card:not([data-category="backend"]),
+.skills-catalog:has(#filter-frontend:checked) .skill-card:not([data-category="frontend"]) { display: none; }
+
+.skills-catalog:has(#filter-all:checked) label[for="filter-all"],
+.skills-catalog:has(#filter-language:checked) label[for="filter-language"],
+.skills-catalog:has(#filter-tool:checked) label[for="filter-tool"],
+.skills-catalog:has(#filter-backend:checked) label[for="filter-backend"],
+.skills-catalog:has(#filter-frontend:checked) label[for="filter-frontend"] { color: var(--bg); border-color: var(--bright); background: var(--bright); }
 .project-card {
   max-width: 42rem;
   margin-top: 2.5rem;

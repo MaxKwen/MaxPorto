@@ -23,8 +23,8 @@
       <a class="brand" href="#home">MaxKwen</a>
       <nav aria-label="Primary navigation">
         <a href="#experience">{{ copy.experience }}</a
-        ><a href="#skills">{{ copy.skills }}</a
         ><a href="#education">{{ copy.education }}</a
+        ><a href="#skills">{{ copy.skills }}</a
         ><a href="#projects">{{ copy.project }}</a
         ><a href="#achievements">{{ copy.achievements }}</a
         ><a href="#contact">Contact</a
@@ -104,11 +104,17 @@
         <p class="eyebrow">02 / {{ copy.skills }}</p>
         <h2>{{ copy.skills }}</h2>
         <p class="section-lead">{{ copy.skills_text }}</p>
-        <div class="skills-grid">
-          <article class="skill-group"><h3>Languages</h3><div class="skill-tags"><span>C</span><span>C++</span><span>Java</span><span>Python</span><span>JavaScript</span></div></article>
-          <article class="skill-group"><h3>Tools</h3><div class="skill-tags"><span>Git</span><span>GitHub</span><span>GitHub Actions</span></div></article>
-          <article class="skill-group"><h3>Backend</h3><div class="skill-tags"><span>Django</span></div></article>
-          <article class="skill-group"><h3>Frontend</h3><div class="skill-tags"><span>HTML</span><span>CSS</span></div></article>
+        <div class="skills-catalog">
+          <input id="filter-all" name="skill-filter" type="radio" checked />
+          <input id="filter-language" name="skill-filter" type="radio" />
+          <input id="filter-tool" name="skill-filter" type="radio" />
+          <input id="filter-backend" name="skill-filter" type="radio" />
+          <input id="filter-frontend" name="skill-filter" type="radio" />
+          <div class="skill-filters"><label for="filter-all">All</label><label for="filter-language">Languages</label><label for="filter-tool">Tools</label><label for="filter-backend">Backend</label><label for="filter-frontend">Frontend</label></div>
+          <div class="skill-cards">
+            <article class="skill-card" data-category="language"><img src="{% static 'img/c.png' %}" alt="" /><strong>C</strong></article><article class="skill-card" data-category="language"><img src="{% static 'img/c++.png' %}" alt="" /><strong>C++</strong></article><article class="skill-card" data-category="language"><img src="{% static 'img/java.png' %}" alt="" /><strong>Java</strong></article><article class="skill-card" data-category="language"><img src="{% static 'img/python.png' %}" alt="" /><strong>Python</strong></article><article class="skill-card" data-category="language"><img src="{% static 'img/js.png' %}" alt="" /><strong>JavaScript</strong></article>
+            <article class="skill-card" data-category="tool"><img src="{% static 'img/git.png' %}" alt="" /><strong>Git</strong></article><article class="skill-card" data-category="tool"><img src="{% static 'img/github.png' %}" alt="" /><strong>GitHub</strong></article><article class="skill-card" data-category="backend"><img src="{% static 'img/django.png' %}" alt="" /><strong>Django</strong></article><article class="skill-card" data-category="frontend"><img src="{% static 'img/html.png' %}" alt="" /><strong>HTML</strong></article><article class="skill-card" data-category="frontend"><img src="{% static 'img/css.png' %}" alt="" /><strong>CSS</strong></article>
+          </div>
         </div>
       </section>
       <section class="section" id="projects">
