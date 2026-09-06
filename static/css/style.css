@@ -464,6 +464,21 @@ h3 {
   display: inline-block;
   margin-top: 0.8rem;
 }
+
+.site-footer {
+  border-top: 1px solid var(--line);
+}
+
+.site-footer p {
+  width: min(1100px, 100%);
+  margin: 0 auto;
+  padding: 1.5rem clamp(1.25rem, 5vw, 5rem);
+  color: var(--muted);
+  font-family: var(--mono);
+  font-size: 0.75rem;
+  text-align: center;
+}
+
 @media (max-width: 760px) {
   .site-header {
     align-items: flex-start;
