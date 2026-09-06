@@ -18,16 +18,21 @@
     <link rel="stylesheet" href="{% static 'css/style.css' %}" />
   </head>
   <body>
+    <input class="theme-toggle" id="theme-toggle" type="checkbox" />
     <header class="site-header">
-      <a class="brand" href="#home">MQH</a>
+      <a class="brand" href="#home">MaxKwen</a>
       <nav aria-label="Primary navigation">
         <a href="#experience">{{ copy.experience }}</a
-        ><a href="#education">{{ copy.education }}</a
+        ><a href="#skills">{{ copy.skills }}</a
         ><a href="#projects">{{ copy.project }}</a
         ><a href="#achievements">{{ copy.achievements }}</a
         ><a href="#contact">Contact</a
         ><a class="language-link" href="{{ copy.switch_url }}"
           >{{ copy.switch_label }}</a
+        ><label class="theme-switch" for="theme-toggle" title="Switch light mode"
+          ><span class="theme-switch__dark" aria-hidden="true">◐</span
+          ><span class="theme-switch__light" aria-hidden="true">☀</span
+          ><span class="visually-hidden">Switch light mode</span></label
         >
       </nav>
     </header>
@@ -40,16 +45,33 @@
           <p class="intro">{{ copy.intro }}</p>
           <div class="hero-links">
             <a
+              class="social-icon"
+              href="mailto:maximus.quinn@gmail.com"
+              aria-label="Send email"
+              title="Email"
+            >
+              <img src="{% static 'img/gmail.png' %}" alt="" />
+            </a>
+            <a
+              class="social-icon"
               href="https://github.com/MaxKwen"
               target="_blank"
               rel="noreferrer"
-              >GitHub</a
-            ><a
+              aria-label="GitHub profile"
+              title="GitHub"
+            >
+              <img src="{% static 'img/github.png' %}" alt="" />
+            </a>
+            <a
+              class="social-icon"
               href="https://www.linkedin.com/in/maximus-hertada/"
               target="_blank"
               rel="noreferrer"
-              >LinkedIn</a
+              aria-label="LinkedIn profile"
+              title="LinkedIn"
             >
+              <img src="{% static 'img/linkedin.png' %}" alt="" />
+            </a>
           </div>
         </div>
         <div class="portrait-frame">
@@ -69,10 +91,22 @@
           <article>Committee<br /><strong>Coming soon</strong></article>
         </div>
       </section>
-      <section class="section" id="education">
-        <p class="eyebrow">02 / {{ copy.education }}</p>
-        <h2>{{ copy.education }}</h2>
-        <p class="section-lead">{{ copy.education_text }}</p>
+      <section class="section" id="skills">
+        <p class="eyebrow">02 / {{ copy.skills }}</p>
+        <h2>{{ copy.skills }}</h2>
+        <p class="section-lead">{{ copy.skills_text }}</p>
+        <div class="skills-catalog">
+          <input id="filter-all" name="skill-filter" type="radio" checked />
+          <input id="filter-language" name="skill-filter" type="radio" />
+          <input id="filter-tool" name="skill-filter" type="radio" />
+          <input id="filter-backend" name="skill-filter" type="radio" />
+          <input id="filter-frontend" name="skill-filter" type="radio" />
+          <div class="skill-filters"><label for="filter-all">All</label><label for="filter-language">Languages</label><label for="filter-tool">Tools</label><label for="filter-backend">Backend</label><label for="filter-frontend">Frontend</label></div>
+          <div class="skill-cards">
+            <article class="skill-card" data-category="language"><img src="{% static 'img/c.png' %}" alt="" /><strong>C</strong></article><article class="skill-card" data-category="language"><img src="{% static 'img/c++.png' %}" alt="" /><strong>C++</strong></article><article class="skill-card" data-category="language"><img src="{% static 'img/java.png' %}" alt="" /><strong>Java</strong></article><article class="skill-card" data-category="language"><img src="{% static 'img/python.png' %}" alt="" /><strong>Python</strong></article><article class="skill-card" data-category="language"><img src="{% static 'img/js.png' %}" alt="" /><strong>JavaScript</strong></article>
+            <article class="skill-card" data-category="tool"><img src="{% static 'img/git.png' %}" alt="" /><strong>Git</strong></article><article class="skill-card" data-category="tool"><img src="{% static 'img/github.png' %}" alt="" /><strong>GitHub</strong></article><article class="skill-card" data-category="backend"><img src="{% static 'img/django.png' %}" alt="" /><strong>Django</strong></article><article class="skill-card" data-category="frontend"><img src="{% static 'img/html.png' %}" alt="" /><strong>HTML</strong></article><article class="skill-card" data-category="frontend"><img src="{% static 'img/css.png' %}" alt="" /><strong>CSS</strong></article>
+          </div>
+        </div>
       </section>
       <section class="section" id="projects">
         <p class="eyebrow">03 / {{ copy.project }}</p>
