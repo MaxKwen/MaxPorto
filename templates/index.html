@@ -23,6 +23,7 @@
       <a class="brand" href="#home">MaxKwen</a>
       <nav aria-label="Primary navigation">
         <a href="#experience">{{ copy.experience }}</a
+        ><a href="#skills">{{ copy.skills }}</a
         ><a href="#education">{{ copy.education }}</a
         ><a href="#projects">{{ copy.project }}</a
         ><a href="#achievements">{{ copy.achievements }}</a
@@ -95,12 +96,23 @@
         </div>
       </section>
       <section class="section" id="education">
-        <p class="eyebrow">02 / {{ copy.education }}</p>
+        <p class="eyebrow">03 / {{ copy.education }}</p>
         <h2>{{ copy.education }}</h2>
         <p class="section-lead">{{ copy.education_text }}</p>
       </section>
+      <section class="section" id="skills">
+        <p class="eyebrow">02 / {{ copy.skills }}</p>
+        <h2>{{ copy.skills }}</h2>
+        <p class="section-lead">{{ copy.skills_text }}</p>
+        <div class="skills-grid">
+          <article class="skill-group"><h3>Languages</h3><div class="skill-tags"><span>C</span><span>C++</span><span>Java</span><span>Python</span><span>JavaScript</span></div></article>
+          <article class="skill-group"><h3>Tools</h3><div class="skill-tags"><span>Git</span><span>GitHub</span><span>GitHub Actions</span></div></article>
+          <article class="skill-group"><h3>Backend</h3><div class="skill-tags"><span>Django</span></div></article>
+          <article class="skill-group"><h3>Frontend</h3><div class="skill-tags"><span>HTML</span><span>CSS</span></div></article>
+        </div>
+      </section>
       <section class="section" id="projects">
-        <p class="eyebrow">03 / {{ copy.project }}</p>
+        <p class="eyebrow">04 / {{ copy.project }}</p>
         <h2>{{ copy.project }}</h2>
         <article class="project-card">
           <span>Backend / Django</span>
@@ -115,7 +127,7 @@
         </article>
       </section>
       <section class="section" id="achievements">
-        <p class="eyebrow">04 / {{ copy.achievements }}</p>
+        <p class="eyebrow">05 / {{ copy.achievements }}</p>
         <h2>{{ copy.achievements }}</h2>
         <div class="card-grid">
           <article>
@@ -128,7 +140,7 @@
         </div>
       </section>
       <section class="section" id="contact">
-        <p class="eyebrow">05 / Contact</p>
+        <p class="eyebrow">06 / Contact</p>
         <h2>{{ copy.contact }}</h2>
         <p class="section-lead">{{ copy.contact_text }}</p>
         <div class="hero-links">
