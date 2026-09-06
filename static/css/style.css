@@ -176,13 +176,6 @@ a:focus-visible {
   color: var(--bright);
   font-size: 1.25rem;
 }
-.intro,
-.section-lead {
-  max-width: 42rem;
-  color: var(--muted);
-  font-size: 1.06rem;
-  line-height: 1.75;
-}
 h1,
 h2,
 h3 {
@@ -332,7 +325,21 @@ h3 {
   line-height: 1.8;
 }
 .card-grid strong {
+  display: block;
   color: var(--text);
+}
+
+.card-grid .card-meta {
+  color: var(--bright);
+  font-family: var(--mono);
+  font-size: 0.75rem;
+}
+
+.card-grid p {
+  margin: 0.55rem 0 0;
+  color: var(--muted);
+  font-size: 0.92rem;
+  line-height: 1.65;
 }
 
 .skills-grid {
@@ -392,14 +399,15 @@ h3 {
 
 .skill-cards {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr));
+  grid-template-columns: repeat(auto-fill, 10.6rem);
+  justify-content: start;
   gap: 1.25rem;
   margin-top: 1.25rem;
 }
 
 .skill-card {
   display: grid;
-  min-height: 10rem;
+  height: 12rem;
   place-items: center;
   align-content: center;
   gap: 0.9rem;
@@ -415,18 +423,6 @@ h3 {
   transform: translateY(-4px);
   border-color: var(--bright);
   box-shadow: 0 1rem 2.5rem rgba(75, 141, 255, 0.2);
-}
-
-.skill-symbol {
-  display: grid;
-  width: 3rem;
-  height: 3rem;
-  place-items: center;
-  border: 1px solid var(--accent);
-  border-radius: 0.8rem;
-  color: var(--bright);
-  font-family: var(--mono);
-  font-weight: 500;
 }
 
 .skill-card img {
@@ -450,6 +446,18 @@ h3 {
 .project-card {
   max-width: 42rem;
   margin-top: 2.5rem;
+}
+
+.project-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1rem;
+  margin-top: 2.5rem;
+}
+
+.project-grid .project-card {
+  max-width: none;
+  margin-top: 0;
 }
 .project-card span {
   color: var(--bright);
@@ -494,6 +502,10 @@ h3 {
     max-width: 18rem;
   }
   .card-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .project-grid {
     grid-template-columns: 1fr;
   }
 

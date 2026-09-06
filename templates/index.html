@@ -42,7 +42,6 @@
           <p class="eyebrow">{{ copy.portfolio }}</p>
           <h1>Maximus<br />Quinn Hertada</h1>
           <p class="role">{{ copy.role }}</p>
-          <p class="intro">{{ copy.intro }}</p>
           <div class="hero-links">
             <a
               class="social-icon"
@@ -86,67 +85,142 @@
       <section class="section" id="experience">
         <p class="eyebrow">01 / {{ copy.experience }}</p>
         <h2>{{ copy.experience }}</h2>
-        <p class="section-lead">{{ copy.experience_text }}</p>
         <div class="card-grid">
-          <article>Organization<br /><strong>Coming soon</strong></article>
-          <article>Internship<br /><strong>Coming soon</strong></article>
-          <article>Committee<br /><strong>Coming soon</strong></article>
+          <article>
+            <span class="card-meta">{{ copy.experience_ta_period }}</span>
+            <strong>{{ copy.experience_ta_role }}</strong>
+            <p>{{ copy.experience_ta_org }}</p>
+            <p>{{ copy.experience_ta_detail }}</p>
+          </article>
+          <article>
+            <span class="card-meta">{{ copy.experience_compfest_period }}</span>
+            <strong>{{ copy.experience_compfest_role }}</strong>
+            <p>{{ copy.experience_compfest_org }}</p>
+            <p>{{ copy.experience_compfest_detail }}</p>
+          </article>
         </div>
       </section>
       <section class="section" id="skills">
         <p class="eyebrow">02 / {{ copy.skills }}</p>
         <h2>{{ copy.skills }}</h2>
-        <p class="section-lead">{{ copy.skills_text }}</p>
         <div class="skills-catalog">
           <input id="filter-all" name="skill-filter" type="radio" checked />
           <input id="filter-language" name="skill-filter" type="radio" />
           <input id="filter-tool" name="skill-filter" type="radio" />
           <input id="filter-backend" name="skill-filter" type="radio" />
           <input id="filter-frontend" name="skill-filter" type="radio" />
-          <div class="skill-filters"><label for="filter-all">All</label><label for="filter-language">Languages</label><label for="filter-tool">Tools</label><label for="filter-backend">Backend</label><label for="filter-frontend">Frontend</label></div>
+          <div class="skill-filters">
+            <label for="filter-all">All</label>
+            <label for="filter-language">Languages</label>
+            <label for="filter-tool">Tools</label>
+            <label for="filter-backend">Backend</label>
+            <label for="filter-frontend">Frontend</label>
+          </div>
           <div class="skill-cards">
-            <article class="skill-card" data-category="language"><img src="{% static 'img/c.png' %}" alt="" /><strong>C</strong></article><article class="skill-card" data-category="language"><img src="{% static 'img/c++.png' %}" alt="" /><strong>C++</strong></article><article class="skill-card" data-category="language"><img src="{% static 'img/java.png' %}" alt="" /><strong>Java</strong></article><article class="skill-card" data-category="language"><img src="{% static 'img/python.png' %}" alt="" /><strong>Python</strong></article><article class="skill-card" data-category="language"><img src="{% static 'img/js.png' %}" alt="" /><strong>JavaScript</strong></article>
-            <article class="skill-card" data-category="tool"><img src="{% static 'img/git.png' %}" alt="" /><strong>Git</strong></article><article class="skill-card" data-category="tool"><img src="{% static 'img/github.png' %}" alt="" /><strong>GitHub</strong></article><article class="skill-card" data-category="backend"><img src="{% static 'img/django.png' %}" alt="" /><strong>Django</strong></article><article class="skill-card" data-category="frontend"><img src="{% static 'img/html.png' %}" alt="" /><strong>HTML</strong></article><article class="skill-card" data-category="frontend"><img src="{% static 'img/css.png' %}" alt="" /><strong>CSS</strong></article>
+            <article class="skill-card" data-category="language">
+              <img src="{% static 'img/c.png' %}" alt="" />
+              <strong>C</strong>
+            </article>
+            <article class="skill-card" data-category="language">
+              <img src="{% static 'img/c++.png' %}" alt="" />
+              <strong>C++</strong>
+            </article>
+            <article class="skill-card" data-category="language">
+              <img src="{% static 'img/java.png' %}" alt="" />
+              <strong>Java</strong>
+            </article>
+            <article class="skill-card" data-category="language">
+              <img src="{% static 'img/python.png' %}" alt="" />
+              <strong>Python</strong>
+            </article>
+            <article class="skill-card" data-category="language">
+              <img src="{% static 'img/js.png' %}" alt="" />
+              <strong>JavaScript</strong>
+            </article>
+            <article class="skill-card" data-category="tool">
+              <img src="{% static 'img/git.png' %}" alt="" />
+              <strong>Git</strong>
+            </article>
+            <article class="skill-card" data-category="tool">
+              <img src="{% static 'img/github.png' %}" alt="" />
+              <strong>GitHub</strong>
+            </article>
+            <article class="skill-card" data-category="tool">
+              <img src="{% static 'img/jupyter.png' %}" alt="" />
+              <strong>Jupyter Notebook</strong>
+            </article>
+            <article class="skill-card" data-category="tool">
+              <img src="{% static 'img/vscode.png' %}" alt="" />
+              <strong>Visual Studio Code</strong>
+            </article>
+            <article class="skill-card" data-category="backend">
+              <img src="{% static 'img/django.png' %}" alt="" />
+              <strong>Django</strong>
+            </article>
+            <article class="skill-card" data-category="frontend">
+              <img src="{% static 'img/html.png' %}" alt="" />
+              <strong>HTML</strong>
+            </article>
+            <article class="skill-card" data-category="frontend">
+              <img src="{% static 'img/css.png' %}" alt="" />
+              <strong>CSS</strong>
+            </article>
           </div>
         </div>
       </section>
       <section class="section" id="projects">
         <p class="eyebrow">03 / {{ copy.project }}</p>
         <h2>{{ copy.project }}</h2>
-        <article class="project-card">
-          <span>Backend / Django</span>
-          <h3>Kusut-Kusut</h3>
-          <p>{{ copy.project_text }}</p>
-          <a
-            href="https://github.com/MaxKwen/kusutkusut-backend"
-            target="_blank"
-            rel="noreferrer"
-            >{{ copy.github }}</a
-          >
-        </article>
+        <div class="project-grid">
+          <article class="project-card">
+            <span>Backend / Django</span>
+            <h3>Kusut-Kusut</h3>
+            <p>{{ copy.project_text }}</p>
+            <a
+              href="https://github.com/MaxKwen/kusutkusut-backend"
+              target="_blank"
+              rel="noreferrer"
+              >{{ copy.github }}</a
+            >
+          </article>
+          <article class="project-card">
+            <span>{{ copy.project_bracelet_type }}</span>
+            <h3>{{ copy.project_bracelet_title }}</h3>
+            <p>{{ copy.project_bracelet_text }}</p>
+          </article>
+          <article class="project-card">
+            <span>{{ copy.project_membrane_type }}</span>
+            <h3>{{ copy.project_membrane_title }}</h3>
+            <p>{{ copy.project_membrane_text }}</p>
+            <a
+              href="https://pubmed.ncbi.nlm.nih.gov/38286141/"
+              target="_blank"
+              rel="noreferrer"
+              >{{ copy.view_publication }}</a
+            >
+          </article>
+        </div>
       </section>
       <section class="section" id="achievements">
         <p class="eyebrow">04 / {{ copy.achievements }}</p>
         <h2>{{ copy.achievements }}</h2>
         <div class="card-grid">
           <article>
-            OSN Informatics<br /><strong>National finalist</strong>
+            {{ copy.award_osn }}<br /><strong>{{ copy.award_osn_detail }}</strong>
           </article>
-          <article>AMO<br /><strong>Bronze medal</strong></article>
-          <article>
-            Publication<br /><strong>Scientific publication co-author</strong>
-          </article>
+          <article>{{ copy.award_amo }}<br /><strong>{{ copy.award_amo_detail }}</strong></article>
         </div>
       </section>
       <section class="section" id="contact">
         <p class="eyebrow">05 / Contact</p>
         <h2>{{ copy.contact }}</h2>
-        <p class="section-lead">{{ copy.contact_text }}</p>
         <div class="hero-links">
-          <a href="mailto:maximus.quinn@gmail.com">maximus.quinn@gmail.com</a
-          ><a
+          <a>maximus.quinn@gmail.com</a>
+          <a
             class="primary"
-            href="mailto:maximus.quinn@gmail.com?subject=Portfolio%20enquiry"
+            href="https://mail.google.com/mail/?view=cm&fs=1&to=maximus.quinn@gmail.com"
+            target="_blank"
+            rel="noreferrer"
             >{{ copy.contact_button }}</a
           >
         </div>
