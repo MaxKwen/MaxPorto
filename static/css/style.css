@@ -307,15 +307,13 @@ h3 {
   background: url("../img/linkedin.png") center calc(50% - 1px) / contain no-repeat;
 }
 
-/* The supplied Gmail SVG has larger transparent margins than the PNG logos. */
-.social-icon[title="Email"] svg {
-  width: 1.55rem;
-  height: 1.55rem;
-  transform: translateY(-0.05rem);
+.social-icon[title="Email"] {
+  background: url("../img/gmail.png") center calc(50% + 3px) / contain no-repeat;
 }
 
 .social-icon[title="GitHub"] svg,
-.social-icon[title="LinkedIn"] svg {
+.social-icon[title="LinkedIn"] svg,
+.social-icon[title="Email"] svg {
   display: none;
 }
 
