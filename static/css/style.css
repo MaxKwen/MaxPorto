@@ -237,6 +237,10 @@ h3 {
   gap: 0.7rem;
   margin-top: 2rem;
 }
+
+.hero .hero-links {
+  gap: 1.7rem;
+}
 .hero-links a,
 .project-card a {
   padding: 0.7rem 0.95rem;
@@ -273,9 +277,9 @@ h3 {
 
 .hero-links .social-icon {
   display: inline-flex;
-  flex: 0 0 1.35rem;
-  width: 1.35rem;
-  height: 1.35rem;
+  flex: 0 0 1.6rem;
+  width: 1.6rem;
+  height: 1.6rem;
   align-items: center;
   align-self: center;
   justify-content: center;
@@ -288,33 +292,22 @@ h3 {
 }
 
 .social-icon img {
-  width: 1.2rem;
-  height: 1.2rem;
+  width: 1.45rem;
+  height: 1.45rem;
   object-fit: contain;
 }
 
-.social-icon svg {
-  display: block;
-  width: 100%;
-  height: 100%;
-}
-
-.social-icon[title="GitHub"] {
-  background: url("../img/github.png") center / contain no-repeat;
-}
-
 .social-icon[title="LinkedIn"] {
-  background: url("../img/linkedin.png") center calc(50% - 1px) / contain no-repeat;
+  transform: translateY(-1px);
 }
 
 .social-icon[title="Email"] {
-  background: url("../img/gmail.png") center calc(50% + 3px) / contain no-repeat;
+  transform: translateY(1px);
 }
 
-.social-icon[title="GitHub"] svg,
-.social-icon[title="LinkedIn"] svg,
-.social-icon[title="Email"] svg {
-  display: none;
+.social-icon[title="Email"] img {
+  width: 1.7rem;
+  height: 1.7rem;
 }
 
 .hero-links .social-icon:hover,
