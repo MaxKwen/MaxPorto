@@ -111,6 +111,16 @@ body::before {
   letter-spacing: 0.08em;
   text-decoration: none;
 }
+
+.mobile-navigation {
+  margin-left: auto;
+}
+
+.nav-toggle,
+.menu-button {
+  display: none;
+}
+
 .site-header nav {
   display: flex;
   flex-wrap: wrap;
@@ -493,15 +503,107 @@ h3 {
 
 @media (max-width: 760px) {
   .site-header {
-    align-items: flex-start;
+    align-items: center;
+    min-height: 4.3rem;
+  }
+
+  .mobile-navigation {
+    position: relative;
+  }
+
+  .nav-toggle {
+    display: block;
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    opacity: 0;
+  }
+
+  .menu-button {
+    display: flex;
+    width: 2.7rem;
+    height: 2.4rem;
+    align-items: center;
+    justify-content: center;
     flex-direction: column;
+    gap: 0.28rem;
+    border: 1px solid var(--bright);
+    border-radius: 0.35rem;
+    color: var(--bright);
+    cursor: pointer;
+    list-style: none;
   }
+
+  .menu-button span {
+    display: block;
+    width: 1.15rem;
+    height: 1px;
+    background: currentColor;
+    transition: transform 160ms ease, opacity 160ms ease;
+  }
+
+  .nav-toggle:checked + .menu-button span:first-child {
+    transform: translateY(0.38rem) rotate(45deg);
+  }
+
+  .nav-toggle:checked + .menu-button span:nth-child(2) {
+    opacity: 0;
+  }
+
+  .nav-toggle:checked + .menu-button span:last-child {
+    transform: translateY(-0.38rem) rotate(-45deg);
+  }
+
   .site-header nav {
-    justify-content: flex-start;
+    position: absolute;
+    top: calc(100% + 0.75rem);
+    right: 0;
+    display: none;
+    width: min(17rem, calc(100vw - 2.5rem));
+    align-items: stretch;
+    flex-direction: column;
+    gap: 0;
+    padding: 0.45rem;
+    border: 1px solid var(--line);
+    border-radius: 0.7rem;
+    background: var(--header);
+    box-shadow: 0 1rem 2rem rgba(0, 0, 0, 0.24);
+    backdrop-filter: blur(16px);
   }
+
+  .nav-toggle:checked ~ nav {
+    display: flex;
+  }
+
+  .nav-toggle:focus-visible + .menu-button {
+    outline: 3px solid var(--bright);
+    outline-offset: 3px;
+  }
+
+  .site-header nav a,
+  .site-header nav .theme-switch {
+    width: 100%;
+    min-height: 2.6rem;
+    padding: 0.45rem 0.7rem;
+    border-radius: 0.4rem;
+  }
+
+  .site-header nav a:hover,
+  .site-header nav a:focus-visible {
+    background: var(--surface);
+  }
+
   .hero {
     grid-template-columns: 1fr;
+    gap: 2.5rem;
   }
+
+  .hero .portrait-frame {
+    order: -1;
+    width: min(18rem, 82vw);
+    justify-self: center;
+  }
+
   .portrait-frame {
     max-width: 18rem;
   }
@@ -518,10 +620,6 @@ h3 {
   }
   .section {
     min-height: auto;
-  }
-
-  .site-header nav {
-    row-gap: 0.75rem;
   }
 }
 

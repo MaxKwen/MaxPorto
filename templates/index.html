@@ -21,6 +21,13 @@
     <input class="theme-toggle" id="theme-toggle" type="checkbox" />
     <header class="site-header">
       <a class="brand" href="#home">MaxKwen</a>
+      <div class="mobile-navigation">
+        <input class="nav-toggle" id="nav-toggle" type="checkbox" aria-label="Open navigation menu" />
+        <label class="menu-button" for="nav-toggle">
+          <span aria-hidden="true"></span>
+          <span aria-hidden="true"></span>
+          <span aria-hidden="true"></span>
+        </label>
       <nav aria-label="Primary navigation">
         <a href="#experience">{{ copy.experience }}</a
         ><a href="#skills">{{ copy.skills }}</a
@@ -35,6 +42,7 @@
           ><span class="visually-hidden">Switch light mode</span></label
         >
       </nav>
+      </div>
     </header>
     <main>
       <section class="hero section" id="home">
