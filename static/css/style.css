@@ -1,3 +1,7 @@
+html {
+  scroll-behavior:auto;
+}
+
 :root {
   --bg: #050a17;
   --surface: rgba(18, 37, 78, 0.6);
