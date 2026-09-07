@@ -32,10 +32,6 @@ Pemisahan ini membuat perubahan visual tidak perlu mengubah Python, sementara pe
 
 Alih-alih membuat dua template yang hampir sama, `COPY` menyimpan salinan teks per bahasa dan view meneruskannya sebagai context. Keuntungannya adalah struktur HTML dan fitur selalu identik di kedua bahasa. Konsekuensinya, setiap penambahan konten harus diperbarui pada kedua entri bahasa agar tidak menghasilkan placeholder atau campuran bahasa.
 
-### Interaksi tanpa JavaScript
-
-Toggle tema menggunakan checkbox, sementara filter keterampilan menggunakan radio button dan selector `:has()`. Pendekatan ini mengurangi skrip yang dikirim ke browser dan tetap berfungsi untuk kontrol standar. Karena `:has()` memerlukan browser modern, katalog tetap menampilkan konten normal apabila state filter tidak didukung; filtering adalah peningkatan pengalaman, bukan satu-satunya cara melihat informasi.
-
 ### Responsivitas mobile
 
 Layout hero memakai grid dua kolom. Pada breakpoint `760px`, CSS mengubahnya menjadi satu kolom dan memberi `order: -1` pada foto agar foto muncul sebelum teks. Navigasi memakai checkbox dan label sebagai tombol hamburger di mobile; nav desktop tidak dibungkus elemen yang dapat menyembunyikannya.
@@ -45,13 +41,3 @@ Pendekatan checkbox dipilih setelah pendekatan `details` terbukti menyembunyikan
 ### Aksesibilitas dan motion
 
 Struktur memakai `header`, `nav`, `main`, `section`, dan `footer`. Kontrol yang tidak mempunyai teks visual diberi label, ikon dekoratif memakai `alt` kosong, dan focus outline disediakan untuk pengguna keyboard. Media query `prefers-reduced-motion` mempersingkat transisi untuk pengguna yang memilih gerakan minimum.
-
-## Verifikasi
-
-Pemeriksaan konfigurasi Django dijalankan dengan:
-
-```powershell
-python manage.py check
-```
-
-Uji manual sebaiknya mencakup kedua URL bahasa, setiap tautan anchor, toggle tema, filter keterampilan, fokus keyboard, serta breakpoint desktop dan mobile.
