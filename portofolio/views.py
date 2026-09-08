@@ -1,14 +1,13 @@
 from django.shortcuts import render
 
-
 COPY = {
     "en": {
         "language": "en",
+        "nama": "Maximus Quinn Hertada",
         "switch_label": "ID",
         "switch_url": "/id/",
         "portfolio": "Professional portfolio",
         "role": "TA & Undergraduate CS Student @ University of Indonesia | Data Scientist Enthusiast",
-        "experience": "Experience",
         "experience_ta_period": "2026 — present",
         "experience_ta_role": "Teaching Assistant, Intro to Digital System",
         "experience_ta_org": "Faculty of Computer Science, University of Indonesia",
@@ -17,8 +16,6 @@ COPY = {
         "experience_compfest_role": "Staff, Data Science Academy",
         "experience_compfest_org": "COMPFEST, University of Indonesia",
         "experience_compfest_detail": "Coordinated industry speakers and mentors, technical documentation, and candidate screening for participating teams.",
-        "skills": "Skills",
-        "project": "Project",
         "project_text": "A Django backend project replicating core X.com interactions: authentication, posts, replies, and likes.",
         "project_bracelet_type": "IoT / Health Technology",
         "project_bracelet_title": "STUMO Wristband",
@@ -27,7 +24,6 @@ COPY = {
         "project_membrane_title": "Cellulose Acetate Membrane Research",
         "project_membrane_text": "Synthesized eco-friendly CO2 adsorbents with BRIN mentorship and analyzed how glycerol addition affects air-purification efficiency.",
         "view_publication": "View publication",
-        "achievements": "Achievements",
         "award_osn": "OSN Informatics",
         "award_osn_detail": "National finalist",
         "award_amo": "AMO",
@@ -38,11 +34,11 @@ COPY = {
     },
     "id": {
         "language": "id",
+        "nama": "Maximus Quinn Hertada",
         "switch_label": "EN",
         "switch_url": "/",
         "portfolio": "Portofolio profesional",
         "role": "Asisten Pengajar & Mahasiswa S1 Ilmu Komputer UI | Penggemar Data Science",
-        "experience": "Experience",
         "experience_ta_period": "2026 — sekarang",
         "experience_ta_role": "Asisten Pengajar, Sistem Digital Dasar",
         "experience_ta_org": "Fakultas Ilmu Komputer, Universitas Indonesia",
@@ -51,8 +47,6 @@ COPY = {
         "experience_compfest_role": "Staf, Data Science Academy",
         "experience_compfest_org": "COMPFEST, Universitas Indonesia",
         "experience_compfest_detail": "Mengoordinasikan pembicara dan mentor industri, dokumentasi teknis, serta seleksi kandidat untuk tim peserta.",
-        "skills": "Skills",
-        "project": "Project",
         "project_text": "Proyek backend Django yang mereplikasi interaksi inti X.com: authentication, post, reply, dan like.",
         "project_bracelet_type": "IoT / Teknologi Kesehatan",
         "project_bracelet_title": "STUMO Wristband",
@@ -61,7 +55,6 @@ COPY = {
         "project_membrane_title": "Riset Membran Selulosa Asetat",
         "project_membrane_text": "Menyintesis adsorben CO2 ramah lingkungan dengan bimbingan BRIN serta menganalisis pengaruh penambahan gliserol terhadap efisiensi pemurnian udara.",
         "view_publication": "Lihat publikasi",
-        "achievements": "Achievements",
         "award_osn": "Informatika OSN",
         "award_osn_detail": "Finalis nasional",
         "award_amo": "AMO",

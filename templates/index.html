@@ -6,9 +6,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta
       name="description"
-      content="Professional portfolio of Maximus Quinn Hertada."
+      content="Professional portfolio of {{ copy.nama }}."
     />
-    <title>Maximus Quinn Hertada - Portfolio</title>
+    <title>{{ copy.nama }} - Portfolio</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
@@ -20,7 +20,7 @@
   <body>
     <input class="theme-toggle" id="theme-toggle" type="checkbox" />
     <header class="site-header">
-      <a class="brand" href="#home">MaxKwen</a>
+      <a class="brand" href="{% url 'main:show_main' %}">MaxKwen</a>
       <div class="mobile-navigation">
         <input class="nav-toggle" id="nav-toggle" type="checkbox" aria-label="Open navigation menu" />
         <label class="menu-button" for="nav-toggle">
@@ -29,10 +29,10 @@
           <span aria-hidden="true"></span>
         </label>
       <nav aria-label="Primary navigation">
-        <a href="#experience">{{ copy.experience }}</a
-        ><a href="#skills">{{ copy.skills }}</a
-        ><a href="#projects">{{ copy.project }}</a
-        ><a href="#achievements">{{ copy.achievements }}</a
+        <a href="{% url 'main:show_experience' %}">Experiences</a
+        ><a href="#skills">Skills</a
+        ><a href="#projects">Project</a
+        ><a href="#achievements">Achievements</a
         ><a href="#contact">Contact</a
         ><a class="language-link" href="{{ copy.switch_url }}"
           >{{ copy.switch_label }}</a
@@ -235,7 +235,7 @@
       </section>
     </main>
     <footer class="site-footer">
-      <p>© 2026 Maximus Quinn Hertada. All rights reserved.</p>
+      <p>© 2026 {{ copy.nama }}. All rights reserved.</p>
     </footer>
   </body>
 </html>
