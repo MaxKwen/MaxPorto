@@ -36,6 +36,7 @@ class ProjectPageTest(TestCase):
         self.assertContains(response, "Featured project")
 
     def test_project_page_shows_empty_state_without_data(self):
+        Project.objects.all().delete()
         response = self.client.get(reverse("main:show_projects"))
 
         self.assertContains(response, "No projects have been added yet.")
@@ -77,3 +78,17 @@ class ProjectModelTest(TestCase):
         )
         self.assertEqual(project.category, "Backend")
         self.assertFalse(project.is_featured)
+
+
+class SeedProjectDataTest(TestCase):
+    def test_three_featured_projects_are_available(self):
+        expected_titles = {
+            "Kusut-Kusut",
+            "STUMO Wristband",
+            "Cellulose Acetate Membrane Research",
+        }
+
+        projects = Project.objects.filter(title__in=expected_titles)
+
+        self.assertEqual(set(projects.values_list("title", flat=True)), expected_titles)
+        self.assertTrue(all(project.is_featured for project in projects))
