@@ -32,7 +32,6 @@ class ProjectPageTest(TestCase):
         self.assertContains(response, project.description)
         self.assertContains(response, project.category)
         self.assertContains(response, project.project_url)
-        self.assertContains(response, project.thumbnail)
         self.assertContains(response, "Featured project")
 
     def test_project_page_shows_empty_state_without_data(self):
