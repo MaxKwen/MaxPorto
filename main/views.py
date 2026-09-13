@@ -1,5 +1,10 @@
 from django.shortcuts import render
 
+from main.models import Project
+
 
 def show_projects(request):
-    return render(request, "projects.html")
+    context = {
+        "project_list": Project.objects.all(),
+    }
+    return render(request, "projects.html", context)

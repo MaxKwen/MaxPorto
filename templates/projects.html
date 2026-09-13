@@ -47,7 +47,28 @@
       <section class="section">
         <p class="eyebrow">Portfolio / Projects</p>
         <h1>Projects</h1>
-        <p class="empty-state">Project content will be displayed here.</p>
+        <div class="project-grid">
+          {% for project in project_list %}
+            <article class="project-card">
+              {% if project.thumbnail %}
+                <img src="{{ project.thumbnail }}" alt="Thumbnail for {{ project.title }}" />
+              {% endif %}
+              <span>{{ project.category }}</span>
+              {% if project.is_featured %}
+                <span>Featured project</span>
+              {% endif %}
+              <h2>{{ project.title }}</h2>
+              <p>{{ project.description }}</p>
+              {% if project.project_url %}
+                <a href="{{ project.project_url }}" target="_blank" rel="noreferrer">
+                  View project
+                </a>
+              {% endif %}
+            </article>
+          {% empty %}
+            <p class="empty-state">No projects have been added yet.</p>
+          {% endfor %}
+        </div>
       </section>
     </main>
     <footer class="site-footer">

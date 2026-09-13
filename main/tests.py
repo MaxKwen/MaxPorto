@@ -16,6 +16,30 @@ class ProjectPageTest(TestCase):
 
         self.assertContains(response, f'href="{reverse("main:show_projects")}"')
 
+    def test_project_data_appears_on_page(self):
+        project = Project.objects.create(
+            title="STUMO Wristband",
+            description="Wearable untuk pemantauan kesehatan siswa.",
+            category="IoT",
+            project_url="https://example.com/stumo",
+            thumbnail="https://example.com/stumo.png",
+            is_featured=True,
+        )
+
+        response = self.client.get(reverse("main:show_projects"))
+
+        self.assertContains(response, project.title)
+        self.assertContains(response, project.description)
+        self.assertContains(response, project.category)
+        self.assertContains(response, project.project_url)
+        self.assertContains(response, project.thumbnail)
+        self.assertContains(response, "Featured project")
+
+    def test_project_page_shows_empty_state_without_data(self):
+        response = self.client.get(reverse("main:show_projects"))
+
+        self.assertContains(response, "No projects have been added yet.")
+
 
 class ProjectModelTest(TestCase):
     def test_project_stores_portfolio_data(self):
