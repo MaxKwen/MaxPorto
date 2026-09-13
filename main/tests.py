@@ -40,17 +40,40 @@ class ProjectPageTest(TestCase):
 
         self.assertContains(response, "No projects have been added yet.")
 
+    def test_indonesian_project_page_uses_indonesian_content(self):
+        project = Project.objects.create(
+            title="Cellulose Acetate Membrane Research",
+            description="Research on an environmentally friendly CO2 adsorbent.",
+            title_id="Riset Membran Selulosa Asetat",
+            description_id="Riset adsorben CO2 yang ramah lingkungan.",
+            category="Data Analysis / Research",
+        )
+
+        response = self.client.get(reverse("main:show_projects_id"))
+
+        self.assertContains(response, 'lang="id"')
+        self.assertContains(response, project.title_id)
+        self.assertContains(response, project.description_id)
+        self.assertNotContains(response, project.description)
+
 
 class ProjectModelTest(TestCase):
     def test_project_stores_portfolio_data(self):
         project = Project.objects.create(
             title="Kusut-Kusut",
             description="Backend Django untuk interaksi sosial.",
+            title_id="Kusut-Kusut",
+            description_id="Backend Django untuk interaksi sosial.",
             category="Backend",
             project_url="https://github.com/MaxKwen/kusutkusut-backend",
             thumbnail="https://example.com/kusut-kusut.png",
         )
 
         self.assertEqual(str(project), "Kusut-Kusut")
+        self.assertEqual(project.title_id, "Kusut-Kusut")
+        self.assertEqual(
+            project.description_id,
+            "Backend Django untuk interaksi sosial.",
+        )
         self.assertEqual(project.category, "Backend")
         self.assertFalse(project.is_featured)
