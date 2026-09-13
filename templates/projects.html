@@ -1,0 +1,57 @@
+{% load static %}
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="description"
+      content="Projects by Maximus Quinn Hertada."
+    />
+    <title>Projects - Maximus Quinn Hertada</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Space+Grotesk:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="{% static 'css/style.css' %}" />
+  </head>
+  <body>
+    <input class="theme-toggle" id="theme-toggle" type="checkbox" />
+    <header class="site-header">
+      <a class="brand" href="{% url 'landing_page' %}">MaxKwen</a>
+      <div class="mobile-navigation">
+        <input class="nav-toggle" id="nav-toggle" type="checkbox" aria-label="Open navigation menu" />
+        <label class="menu-button" for="nav-toggle">
+          <span aria-hidden="true"></span>
+          <span aria-hidden="true"></span>
+          <span aria-hidden="true"></span>
+        </label>
+        <nav aria-label="Primary navigation">
+          <a href="{% url 'landing_page' %}#experience">Experience</a>
+          <a href="{% url 'landing_page' %}#skills">Skills</a>
+          <a href="{% url 'main:show_projects' %}">Projects</a>
+          <a href="{% url 'landing_page' %}#achievements">Achievements</a>
+          <a href="{% url 'landing_page' %}#contact">Contact</a>
+          <a class="language-link" href="{% url 'landing_page_id' %}">ID</a>
+          <label class="theme-switch" for="theme-toggle" title="Switch light mode">
+            <span class="theme-switch__dark" aria-hidden="true">◐</span>
+            <span class="theme-switch__light" aria-hidden="true">☀</span>
+            <span class="visually-hidden">Switch light mode</span>
+          </label>
+        </nav>
+      </div>
+    </header>
+    <main>
+      <section class="section">
+        <p class="eyebrow">Portfolio / Projects</p>
+        <h1>Projects</h1>
+        <p class="empty-state">Project content will be displayed here.</p>
+      </section>
+    </main>
+    <footer class="site-footer">
+      <p>© 2026 Maximus Quinn Hertada. All rights reserved.</p>
+    </footer>
+  </body>
+</html>

@@ -31,7 +31,7 @@
       <nav aria-label="Primary navigation">
         <a href="#experience">{{ copy.experience }}</a
         ><a href="#skills">{{ copy.skills }}</a
-        ><a href="#projects">{{ copy.project }}</a
+        ><a href="{% url 'main:show_projects' %}">{{ copy.project }}</a
         ><a href="#achievements">{{ copy.achievements }}</a
         ><a href="#contact">Contact</a
         ><a class="language-link" href="{{ copy.switch_url }}"
