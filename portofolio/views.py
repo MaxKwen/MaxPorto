@@ -12,8 +12,6 @@ COPY = {
         "skills": "Skills",
         "project": "Project",
         "achievements": "Achievements",
-        "contact": "Let’s connect.",
-        "contact_button": "Contact Me",
     },
     "id": {
         "language": "id",
@@ -25,8 +23,6 @@ COPY = {
         "skills": "Skills",
         "project": "Project",
         "achievements": "Achievements",
-        "contact": "Contact",
-        "contact_button": "Hubungi Saya",
     },
 }
 

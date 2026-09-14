@@ -415,3 +415,27 @@ class SeedAchievementDataTest(TestCase):
             list(Achievement.objects.values_list("title", flat=True)),
             ["OSN Informatics", "AMO"],
         )
+
+
+class ContactRemovalTest(TestCase):
+    def test_contact_section_and_navigation_are_removed_from_all_pages(self):
+        page_names = [
+            "landing_page",
+            "landing_page_id",
+            "main:show_projects",
+            "main:show_projects_id",
+            "main:show_experiences",
+            "main:show_experiences_id",
+            "main:show_skills",
+            "main:show_skills_id",
+            "main:show_achievements",
+            "main:show_achievements_id",
+        ]
+
+        for page_name in page_names:
+            with self.subTest(page_name=page_name):
+                response = self.client.get(reverse(page_name))
+                self.assertNotContains(response, 'id="contact"')
+                self.assertNotContains(response, "#contact")
+                self.assertNotContains(response, ">Contact<")
+                self.assertNotContains(response, ">Kontak<")

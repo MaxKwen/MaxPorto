@@ -45,7 +45,6 @@
           {% else %}
             <a href="{% url 'main:show_achievements' %}">{{ copy.achievements }}</a>
           {% endif %}
-          <a href="{% url 'landing_page' %}#contact">{{ copy.contact }}</a>
           {% if copy.language == "id" %}
             <a class="language-link" href="{% url 'main:show_projects' %}">{{ copy.switch_label }}</a>
           {% else %}

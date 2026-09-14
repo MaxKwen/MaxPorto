@@ -31,14 +31,12 @@
             <a href="{% url 'main:show_skills_id' %}">{{ copy.skills }}</a>
             <a href="{% url 'main:show_projects_id' %}">{{ copy.projects }}</a>
             <a href="{% url 'main:show_achievements_id' %}">{{ copy.achievements }}</a>
-            <a href="{% url 'landing_page_id' %}#contact">{{ copy.contact }}</a>
             <a class="language-link" href="{% url 'main:show_skills' %}">{{ copy.switch_label }}</a>
           {% else %}
             <a href="{% url 'main:show_experiences' %}">{{ copy.experience }}</a>
             <a href="{% url 'main:show_skills' %}">{{ copy.skills }}</a>
             <a href="{% url 'main:show_projects' %}">{{ copy.projects }}</a>
             <a href="{% url 'main:show_achievements' %}">{{ copy.achievements }}</a>
-            <a href="{% url 'landing_page' %}#contact">{{ copy.contact }}</a>
             <a class="language-link" href="{% url 'main:show_skills_id' %}">{{ copy.switch_label }}</a>
           {% endif %}
           <label class="theme-switch" for="theme-toggle" title="Switch light mode">

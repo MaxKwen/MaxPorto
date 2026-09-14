@@ -45,7 +45,6 @@
         {% else %}
         ><a href="{% url 'main:show_achievements' %}">{{ copy.achievements }}</a
         {% endif %}
-        ><a href="#contact">Contact</a
         ><a class="language-link" href="{{ copy.switch_url }}"
           >{{ copy.switch_label }}</a
         ><label class="theme-switch" for="theme-toggle" title="Switch light mode"
@@ -100,20 +99,6 @@
             src="{% static 'img/max.jpeg' %}"
             alt="Portrait of Maximus Quinn Hertada"
           />
-        </div>
-      </section>
-      <section class="section" id="contact">
-        <p class="eyebrow">01 / Contact</p>
-        <h2>{{ copy.contact }}</h2>
-        <div class="hero-links">
-          <a>maximus.quinn@gmail.com</a>
-          <a
-            class="primary"
-            href="https://mail.google.com/mail/?view=cm&fs=1&to=maximus.quinn@gmail.com"
-            target="_blank"
-            rel="noreferrer"
-            >{{ copy.contact_button }}</a
-          >
         </div>
       </section>
     </main>
