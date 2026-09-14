@@ -1,7 +1,8 @@
 # MaxPorto
 
-Proyek portofolio ini menggunakan Django untuk merender satu halaman portofolio
-bilingual dan HTML/CSS murni untuk antarmuka.
+Proyek portofolio pribadi bilingual yang menggunakan Django dan pola
+Model-View-Template (MVT). Data pengalaman, proyek, keahlian, dan pencapaian
+disimpan dalam model Django dan dirender melalui template HTML.
 
 > Nama: Maximus Quinn Hertada
 >
@@ -11,12 +12,18 @@ bilingual dan HTML/CSS murni untuk antarmuka.
 
 ## Fitur
 
-- Halaman bilingual: English di `/` dan Indonesia di `/id/`.
-- Navigasi anchor untuk setiap section utama dan menu hamburger responsif pada
-  layar kecil.
+- Homepage bilingual: English di `/` dan Indonesia di `/id/`, dengan data
+  Experience dinamis dari database.
+- Halaman daftar bilingual untuk Projects, Skills, dan Achievements:
+  - `/projects/` dan `/id/projects/`
+  - `/skills/` dan `/id/skills/`
+  - `/achievements/` dan `/id/achievements/`
+- Data portofolio dirender menggunakan Django Template Language, lengkap dengan
+  pesan kondisi kosong ketika belum ada data.
+- Navigasi antarkomponen menggunakan named URL Django dan menu hamburger
+  responsif pada layar kecil.
 - Tema gelap sebagai default, dengan toggle light mode berbasis CSS.
 - Katalog skill dengan filter kategori berbasis CSS, tanpa JavaScript.
-- Konten pengalaman, proyek, pencapaian, dan tautan sosial yang responsif.
 - Tautan GitHub, LinkedIn, Gmail Compose, repository proyek, dan publikasi
   dibuka pada tab baru.
 - Dukungan keyboard focus dan `prefers-reduced-motion` untuk aksesibilitas
@@ -36,39 +43,55 @@ Prasyarat: Python 3 dan `pip`.
 python -m venv .venv
 .\.venv\Scripts\Activate.ps1
 python -m pip install -r requirements.txt
+python manage.py migrate
 python manage.py runserver
 ```
 
 Buka `http://127.0.0.1:8000/` untuk halaman English atau
 `http://127.0.0.1:8000/id/` untuk halaman Indonesia.
 
-Pemeriksaan dasar Django dapat dijalankan dengan:
+Pemeriksaan dan test dapat dijalankan dengan:
 
 ```powershell
 python manage.py check
+python manage.py test
 ```
 
 ## Struktur proyek
 
 ```text
 MaxPorto/
+├── main/
+│   ├── migrations/         # Migrasi skema dan seed data portofolio
+│   ├── models.py           # Model Project, Experience, Skill, dan Achievement
+│   ├── tests.py            # Test model, view, template, route, dan seed data
+│   ├── urls.py             # Named URL halaman daftar bilingual
+│   └── views.py            # Query model dan context halaman daftar
 ├── portofolio/
-│   ├── urls.py             # URL English dan Indonesia
-│   └── views.py            # Konten bilingual dan view halaman utama
+│   ├── settings.py         # Konfigurasi proyek Django
+│   ├── urls.py             # URL proyek dan homepage bilingual
+│   └── views.py            # View dan context homepage
 ├── static/
 │   ├── css/style.css       # Tema, layout, responsivitas, dan komponen UI
 │   └── img/                # Foto dan ikon lokal
-├── templates/index.html    # Struktur halaman portofolio
+├── templates/
+│   ├── index.html          # Homepage dan Experience dinamis
+│   ├── projects.html       # Daftar Project
+│   ├── skills.html         # Daftar Skill
+│   └── achievements.html   # Daftar Achievement
 ├── docs/                   # Catatan arsitektur dan progres pengembangan
 ├── requirements.txt
 └── manage.py
 ```
 
-Konten teks dipusatkan pada kamus `COPY` di `portofolio/views.py`. Kedua
-halaman memakai template yang sama, sehingga struktur dan fitur tetap
-konsisten tanpa menduplikasi HTML.
+Konten antarmuka bilingual disimpan dalam kamus copy pada view. Data portofolio
+diambil dari model melalui QuerySet, dimasukkan ke context oleh view, kemudian
+dirender oleh template menggunakan perulangan dan kondisi Django Template
+Language.
 
-## Tugas 1
+## Pertanyaan reflektif
+
+### Tugas 1
 
 ### 1. Pada Tutorial dan Tugas 1, Anda diberi kebebasan untuk menentukan tampilan dari website portofolio Anda. Saat Anda merancang struktur HTML yang digunakan, apakah Anda menggunakan elemen semantik HTML5 seperti `section`, `article`, atau `aside`? Jika iya, bagaimana elemen tersebut membantu Anda dalam membuat static web? Jika tidak, mengapa tanpa elemen tersebut sudah memenuhi kebutuhan desain Anda?
 
@@ -117,6 +140,27 @@ portofolio dapat diperbarui tanpa mengubah template. Fitur lanjutan lain yang
 ingin dipersiapkan adalah form kontak yang aman dengan validasi server-side,
 penyimpanan preferensi tema, serta halaman detail proyek.
 
+### Tugas 2
+
+1. Jelaskan alur yang terjadi ketika pengguna membuka halaman portofolio baru,
+   mulai dari permintaan yang diterima proyek hingga data ditampilkan pada
+   browser. Dalam jawabanmu, jelaskan peran `urls.py` proyek, `urls.py`
+   aplikasi, view, model, dan template.
+
+   Jawaban:
+
+2. Mengapa data untuk bagian portofolio baru sebaiknya disimpan pada model dan
+   tidak ditulis langsung di dalam template? Jelaskan dampaknya terhadap
+   kemudahan pemeliharaan dan pengembangan aplikasi.
+
+   Jawaban:
+
+3. Apa perbedaan fungsi `makemigrations` dan `migrate` pada Django? Berikan
+   contoh perubahan model yang mengharuskanmu menjalankan kedua perintah
+   tersebut.
+
+   Jawaban:
+
 ## Progres pengembangan
 
 | Periode | Fokus | Hasil |
@@ -126,16 +170,19 @@ penyimpanan preferensi tema, serta halaman detail proyek.
 | 5 September 2026 | Desain dan aksesibilitas | Polishing visual, tema light/dark, ikon sosial, dan focus state keyboard. |
 | 6 September 2026 | Pengayaan portofolio | Skill catalog, footer, tautan eksternal, konten pengalaman, proyek, dan pencapaian. |
 | 7 September 2026 | Responsivitas dan dokumentasi | Menu mobile, prioritas foto hero pada mobile, serta dokumentasi proyek. |
+| 11–14 September 2026 | Implementasi MVT | Model, migrasi, seed data, halaman daftar bilingual, navigasi, dan test untuk data portofolio dinamis. |
 
 ## AI disclosure
 
 ### Cara AI digunakan
 
-Saya menggunakan Codex sebagai asisten pengembangan lokal. AI membantu
-menjelaskan opsi desain, menyarankan struktur HTML/CSS, menyiapkan perubahan
-kode, serta membantu membuat pemeriksaan teknis seperti `python manage.py
-check`. Keputusan fitur, pemilihan konten, aset gambar, dan perubahan akhir
-tetap berada pada saya sebagai pemilik proyek.
+Saya menggunakan Hermes Agent sebagai asisten pengembangan lokal. AI membantu
+menjelaskan pola MVT, menyarankan struktur model dan route, menyiapkan perubahan
+kode dan test, serta menjalankan pemeriksaan teknis seperti `python manage.py
+check` dan `python manage.py test`. Pengembangan dilakukan secara bertahap:
+setiap bagian diimplementasikan dan diuji secara terpisah, kemudian hasilnya
+saya tinjau sebelum di-commit. Keputusan fitur, pemilihan konten, aset gambar,
+dan perubahan akhir tetap berada pada saya sebagai pemilik proyek.
 
 ### Keterbatasan AI
 
