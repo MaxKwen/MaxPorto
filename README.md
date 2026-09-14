@@ -163,19 +163,23 @@ Karena model memisahkan data dari tampilan. Template seharusnya bertanggung jawa
 - Perubahan desain berisiko ikut mengubah atau menghapus data.
 - Fitur seperti pencarian, pengurutan, filter, dan halaman detail lebih sulit dikembangkan.
 Jika data disimpan pada model, template cukup melakukan perulangan terhadap project_list. Menambahkan proyek baru berarti menambahkan record ke database tanpa mengubah struktur template.Contohnya, satu template ini:
-> {% for project in project_list %}
->   {{ project.title }}
-> {% endfor %}
+
+{% for project in project_list %}
+  {{ project.title }}
+{% endfor %}
+
 dapat menampilkan satu, sepuluh, maupun seratus proyek tanpa perlu menyalin struktur HTML secara manual. Dengan begitu, pemeliharaan website juga lebih efektif dan efisien karena struktur kode lebih terorganisasi, perubahan data tidak memerlukan perubahan template, dan kesalahan saat memperbarui data lebih mudah dicegah. Intinya, model menangani “apa datanya”, sedangkan template menangani “bagaimana data tersebut ditampilkan”. Pemisahan tanggung jawab ini membuat aplikasi lebih mudah dirawat dan dikembangkan.
 
 ### 3. Apa perbedaan fungsi `makemigrations` dan `migrate` pada Django? Berikan contoh perubahan model yang mengharuskanmu menjalankan kedua perintah tersebut.
 
 Makemigrations dan migrate sama-sama berhubungan dengan perubahan struktur database, tetapi memiliki fungsi yang berbeda. Makemigrations memeriksa perubahan yang dibuat pada `models.py`, kemudian membuat file migrasi berisi instruksi perubahan skema database. Perintah ini belum mengubah database. Ia hanya menghasilkan “rencana perubahan”, misalnya file `main/migrations/0010_project_created_at.py`. Sedangkan migrate membaca file-file migrasi yang belum diterapkan, lalu benar-benar menjalankan perubahan tersebut pada database. Contoh perubahan model:
 Misalnya model Project awalnya belum memiliki tanggal pembuatan, lalu ditambahkan field berikut:
-> class Project(models.Model):
->   title = models.CharField(max_length=255)
->   description = models.TextField()
->   created_at = models.DateTimeField(auto_now_add=True)
+
+class Project(models.Model):
+  title = models.CharField(max_length=255)
+  description = models.TextField()
+  created_at = models.DateTimeField(auto_now_add=True)
+
 Setelah mengubah models.py, jalankan makemigrations dan migrate. Django akan mengeksekusi migrasi tersebut sehingga tabel Project di database benar-benar memiliki kolom created_at. Jika hanya menjalankan makemigrations, file rencana perubahan sudah ada, tetapi database belum berubah. Jika mencoba menggunakan field created_at sebelum menjalankan migrate, aplikasi dapat mengalami error karena kolom tersebut belum tersedia di database.
 
 ## Progres pengembangan
@@ -195,8 +199,8 @@ Setelah mengubah models.py, jalankan makemigrations dan migrate. Django akan men
 
 Saya menggunakan Hermes Agent sebagai asisten pengembangan lokal. AI membantu
 menjelaskan pola MVT, menyarankan struktur model dan route, menyiapkan perubahan
-kode dan test, serta menjalankan pemeriksaan teknis seperti `python manage.py
-check` dan `python manage.py test`. Pengembangan dilakukan secara bertahap:
+kode dan test, serta menjalankan pemeriksaan teknis seperti python manage.py
+check dan python manage.py test. Pengembangan dilakukan secara bertahap:
 setiap bagian diimplementasikan dan diuji secara terpisah, kemudian hasilnya
 saya tinjau sebelum di-commit. Keputusan fitur, pemilihan konten, aset gambar,
 dan perubahan akhir tetap berada pada saya sebagai pemilik proyek.
