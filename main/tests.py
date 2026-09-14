@@ -1,7 +1,7 @@
 from django.test import TestCase
 from django.urls import reverse
 
-from main.models import Project
+from main.models import Experience, Project
 
 
 class ProjectPageTest(TestCase):
@@ -96,3 +96,114 @@ class SeedProjectDataTest(TestCase):
 
         self.assertEqual(set(projects.values_list("title", flat=True)), expected_titles)
         self.assertTrue(all(project.is_featured for project in projects))
+
+
+class ExperienceModelTest(TestCase):
+    def test_experience_stores_bilingual_portfolio_data(self):
+        experience = Experience.objects.create(
+            title="Teaching Assistant, Intro to Digital System",
+            title_id="Asisten Pengajar, Sistem Digital Dasar",
+            organization="Faculty of Computer Science, University of Indonesia",
+            organization_id="Fakultas Ilmu Komputer, Universitas Indonesia",
+            description="Led tutorials and evaluated weekly work.",
+            description_id="Memimpin tutorial dan mengevaluasi tugas mingguan.",
+            category="Teaching",
+            start_year=2026,
+        )
+
+        self.assertEqual(str(experience), experience.title)
+        self.assertTrue(experience.is_ongoing)
+        self.assertIsNone(experience.end_year)
+
+
+class ExperiencePageTest(TestCase):
+    def setUp(self):
+        Experience.objects.all().delete()
+
+    def test_experience_page_uses_experiences_template(self):
+        response = self.client.get(reverse("main:show_experiences"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, "experiences.html")
+
+    def test_homepages_link_to_matching_experience_pages(self):
+        english_response = self.client.get(reverse("landing_page"))
+        indonesian_response = self.client.get(reverse("landing_page_id"))
+
+        self.assertContains(
+            english_response,
+            f'href="{reverse("main:show_experiences")}"',
+        )
+        self.assertContains(
+            indonesian_response,
+            f'href="{reverse("main:show_experiences_id")}"',
+        )
+
+    def test_experience_data_appears_on_page(self):
+        experience = Experience.objects.create(
+            title="Teaching Assistant, Intro to Digital System",
+            title_id="Asisten Pengajar, Sistem Digital Dasar",
+            organization="Faculty of Computer Science, University of Indonesia",
+            organization_id="Fakultas Ilmu Komputer, Universitas Indonesia",
+            description="Led tutorials and evaluated weekly work.",
+            description_id="Memimpin tutorial dan mengevaluasi tugas mingguan.",
+            category="Teaching",
+            start_year=2026,
+        )
+
+        response = self.client.get(reverse("main:show_experiences"))
+
+        self.assertContains(response, experience.title)
+        self.assertContains(response, experience.organization)
+        self.assertContains(response, experience.description)
+        self.assertContains(response, experience.category)
+        self.assertContains(response, "2026 — present")
+
+    def test_indonesian_page_uses_indonesian_content(self):
+        experience = Experience.objects.create(
+            title="Staff, Data Science Academy",
+            title_id="Staf, Data Science Academy",
+            organization="COMPFEST, University of Indonesia",
+            organization_id="COMPFEST, Universitas Indonesia",
+            description="Coordinated speakers and mentors.",
+            description_id="Mengoordinasikan pembicara dan mentor.",
+            category="Organization",
+            start_year=2026,
+        )
+
+        response = self.client.get(reverse("main:show_experiences_id"))
+
+        self.assertContains(response, experience.title_id)
+        self.assertContains(response, experience.organization_id)
+        self.assertContains(response, experience.description_id)
+        self.assertContains(response, "2026 — sekarang")
+        self.assertNotContains(response, experience.description)
+
+    def test_experience_page_shows_empty_state_without_data(self):
+        response = self.client.get(reverse("main:show_experiences"))
+
+        self.assertContains(response, "No experience has been added yet.")
+
+    def test_homepage_does_not_duplicate_experience_cards(self):
+        response = self.client.get(reverse("landing_page"))
+
+        self.assertNotContains(
+            response,
+            "Teaching Assistant, Intro to Digital System",
+        )
+
+
+class SeedExperienceDataTest(TestCase):
+    def test_two_current_experiences_are_available(self):
+        expected_titles = {
+            "Teaching Assistant, Intro to Digital System",
+            "Staff, Data Science Academy",
+        }
+
+        experiences = Experience.objects.filter(title__in=expected_titles)
+
+        self.assertEqual(
+            set(experiences.values_list("title", flat=True)),
+            expected_titles,
+        )
+        self.assertTrue(all(experience.is_ongoing for experience in experiences))

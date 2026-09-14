@@ -29,7 +29,11 @@
           <span aria-hidden="true"></span>
         </label>
       <nav aria-label="Primary navigation">
-        <a href="#experience">{{ copy.experience }}</a
+        {% if copy.language == "id" %}
+        <a href="{% url 'main:show_experiences_id' %}">{{ copy.experience }}</a
+        {% else %}
+        <a href="{% url 'main:show_experiences' %}">{{ copy.experience }}</a
+        {% endif %}
         ><a href="#skills">{{ copy.skills }}</a
         ><a href="{% url 'main:show_projects' %}">{{ copy.project }}</a
         ><a href="#achievements">{{ copy.achievements }}</a
@@ -90,26 +94,8 @@
           />
         </div>
       </section>
-      <section class="section" id="experience">
-        <p class="eyebrow">01 / {{ copy.experience }}</p>
-        <h2>{{ copy.experience }}</h2>
-        <div class="card-grid">
-          <article>
-            <span class="card-meta">{{ copy.experience_ta_period }}</span>
-            <strong>{{ copy.experience_ta_role }}</strong>
-            <p>{{ copy.experience_ta_org }}</p>
-            <p>{{ copy.experience_ta_detail }}</p>
-          </article>
-          <article>
-            <span class="card-meta">{{ copy.experience_compfest_period }}</span>
-            <strong>{{ copy.experience_compfest_role }}</strong>
-            <p>{{ copy.experience_compfest_org }}</p>
-            <p>{{ copy.experience_compfest_detail }}</p>
-          </article>
-        </div>
-      </section>
       <section class="section" id="skills">
-        <p class="eyebrow">02 / {{ copy.skills }}</p>
+        <p class="eyebrow">01 / {{ copy.skills }}</p>
         <h2>{{ copy.skills }}</h2>
         <div class="skills-catalog">
           <input id="filter-all" name="skill-filter" type="radio" checked />
@@ -177,7 +163,7 @@
         </div>
       </section>
       <section class="section" id="achievements">
-        <p class="eyebrow">03 / {{ copy.achievements }}</p>
+        <p class="eyebrow">02 / {{ copy.achievements }}</p>
         <h2>{{ copy.achievements }}</h2>
         <div class="card-grid">
           <article>
@@ -187,7 +173,7 @@
         </div>
       </section>
       <section class="section" id="contact">
-        <p class="eyebrow">04 / Contact</p>
+        <p class="eyebrow">03 / Contact</p>
         <h2>{{ copy.contact }}</h2>
         <div class="hero-links">
           <a>maximus.quinn@gmail.com</a>

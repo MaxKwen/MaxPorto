@@ -4,10 +4,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta
-      name="description"
-      content="{{ copy.meta_description }}"
-    />
+    <meta name="description" content="{{ copy.meta_description }}" />
     <title>{{ copy.page_title }} - Maximus Quinn Hertada</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -31,17 +28,18 @@
         <nav aria-label="Primary navigation">
           {% if copy.language == "id" %}
             <a href="{% url 'main:show_experiences_id' %}">{{ copy.experience }}</a>
+            <a href="{% url 'landing_page_id' %}#skills">{{ copy.skills }}</a>
+            <a href="{% url 'main:show_projects_id' %}">{{ copy.projects }}</a>
+            <a href="{% url 'landing_page_id' %}#achievements">{{ copy.achievements }}</a>
+            <a href="{% url 'landing_page_id' %}#contact">{{ copy.contact }}</a>
+            <a class="language-link" href="{% url 'main:show_experiences' %}">{{ copy.switch_label }}</a>
           {% else %}
             <a href="{% url 'main:show_experiences' %}">{{ copy.experience }}</a>
-          {% endif %}
-          <a href="{% url 'landing_page' %}#skills">{{ copy.skills }}</a>
-          <a href="{% url 'main:show_projects' %}">{{ copy.projects }}</a>
-          <a href="{% url 'landing_page' %}#achievements">{{ copy.achievements }}</a>
-          <a href="{% url 'landing_page' %}#contact">{{ copy.contact }}</a>
-          {% if copy.language == "id" %}
-            <a class="language-link" href="{% url 'main:show_projects' %}">{{ copy.switch_label }}</a>
-          {% else %}
-            <a class="language-link" href="{% url 'main:show_projects_id' %}">{{ copy.switch_label }}</a>
+            <a href="{% url 'landing_page' %}#skills">{{ copy.skills }}</a>
+            <a href="{% url 'main:show_projects' %}">{{ copy.projects }}</a>
+            <a href="{% url 'landing_page' %}#achievements">{{ copy.achievements }}</a>
+            <a href="{% url 'landing_page' %}#contact">{{ copy.contact }}</a>
+            <a class="language-link" href="{% url 'main:show_experiences_id' %}">{{ copy.switch_label }}</a>
           {% endif %}
           <label class="theme-switch" for="theme-toggle" title="Switch light mode">
             <span class="theme-switch__dark" aria-hidden="true">◐</span>
@@ -52,32 +50,29 @@
       </div>
     </header>
     <main>
-      <section class="section projects-page">
+      <section class="section projects-page experience-page">
         <div class="projects-heading">
           <p class="eyebrow">{{ copy.eyebrow }}</p>
           <h1>{{ copy.page_title }}</h1>
           <p class="projects-intro">{{ copy.intro }}</p>
         </div>
-        <div class="project-grid">
-          {% for project in project_list %}
-            <article class="project-card{% if project.is_featured %} project-card--featured{% endif %}">
-              <div class="project-card__meta">
-                <span class="project-category">{{ project.category }}</span>
-                {% if project.is_featured %}
-                  <span class="featured-badge"><span aria-hidden="true"></span>{{ copy.featured }}</span>
-                {% endif %}
+        <div class="experience-grid">
+          {% for experience in experience_list %}
+            <article class="experience-card">
+              <div class="experience-card__meta">
+                <span class="experience-period">
+                  {{ experience.start_year }} — {{ experience.end_year|default:copy.present }}
+                </span>
+                <span class="experience-category">{{ experience.category }}</span>
               </div>
               {% if copy.language == "id" %}
-                <h2>{{ project.title_id|default:project.title }}</h2>
-                <p>{{ project.description_id|default:project.description }}</p>
+                <h2>{{ experience.title_id|default:experience.title }}</h2>
+                <p class="experience-organization">{{ experience.organization_id|default:experience.organization }}</p>
+                <p>{{ experience.description_id|default:experience.description }}</p>
               {% else %}
-                <h2>{{ project.title }}</h2>
-                <p>{{ project.description }}</p>
-              {% endif %}
-              {% if project.project_url %}
-                <a class="project-link" href="{{ project.project_url }}" target="_blank" rel="noreferrer">
-                  {{ copy.view_project }} <span aria-hidden="true">↗</span>
-                </a>
+                <h2>{{ experience.title }}</h2>
+                <p class="experience-organization">{{ experience.organization }}</p>
+                <p>{{ experience.description }}</p>
               {% endif %}
             </article>
           {% empty %}
