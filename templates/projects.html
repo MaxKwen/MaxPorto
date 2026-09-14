@@ -30,9 +30,9 @@
         </label>
         <nav aria-label="Primary navigation">
           {% if copy.language == "id" %}
-            <a href="{% url 'main:show_experiences_id' %}">{{ copy.experience }}</a>
+            <a href="{% url 'landing_page_id' %}#experience">{{ copy.experience }}</a>
           {% else %}
-            <a href="{% url 'main:show_experiences' %}">{{ copy.experience }}</a>
+            <a href="{% url 'landing_page' %}#experience">{{ copy.experience }}</a>
           {% endif %}
           {% if copy.language == "id" %}
             <a href="{% url 'main:show_skills_id' %}">{{ copy.skills }}</a>

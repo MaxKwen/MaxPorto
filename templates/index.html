@@ -30,9 +30,9 @@
         </label>
       <nav aria-label="Primary navigation">
         {% if copy.language == "id" %}
-        <a href="{% url 'main:show_experiences_id' %}">{{ copy.experience }}</a
+        <a href="{% url 'landing_page_id' %}#experience">{{ copy.experience }}</a
         {% else %}
-        <a href="{% url 'main:show_experiences' %}">{{ copy.experience }}</a
+        <a href="{% url 'landing_page' %}#experience">{{ copy.experience }}</a
         {% endif %}
         {% if copy.language == "id" %}
         ><a href="{% url 'main:show_skills_id' %}">{{ copy.skills }}</a
@@ -99,6 +99,33 @@
             src="{% static 'img/max.jpeg' %}"
             alt="Portrait of Maximus Quinn Hertada"
           />
+        </div>
+      </section>
+      <section class="section" id="experience">
+        <p class="eyebrow">01 / {{ copy.experience }}</p>
+        <h2>{{ copy.experience }}</h2>
+        <div class="experience-grid">
+          {% for experience in experience_list %}
+            <article class="experience-card">
+              <div class="experience-card__meta">
+                <span class="experience-period">
+                  {{ experience.start_year }} — {{ experience.end_year|default:copy.present }}
+                </span>
+                <span class="experience-category">{{ experience.category }}</span>
+              </div>
+              {% if copy.language == "id" %}
+                <h2>{{ experience.title_id|default:experience.title }}</h2>
+                <p class="experience-organization">{{ experience.organization_id|default:experience.organization }}</p>
+                <p>{{ experience.description_id|default:experience.description }}</p>
+              {% else %}
+                <h2>{{ experience.title }}</h2>
+                <p class="experience-organization">{{ experience.organization }}</p>
+                <p>{{ experience.description }}</p>
+              {% endif %}
+            </article>
+          {% empty %}
+            <p class="empty-state">{{ copy.experience_empty }}</p>
+          {% endfor %}
         </div>
       </section>
     </main>
