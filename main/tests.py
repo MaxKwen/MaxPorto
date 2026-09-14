@@ -16,6 +16,11 @@ class ProjectPageTest(TestCase):
 
         self.assertContains(response, f'href="{reverse("main:show_projects")}"')
 
+    def test_homepage_does_not_duplicate_project_cards(self):
+        response = self.client.get(reverse("landing_page"))
+
+        self.assertNotContains(response, 'class="project-card"')
+
     def test_project_data_appears_on_page(self):
         project = Project.objects.create(
             title="STUMO Wristband",
