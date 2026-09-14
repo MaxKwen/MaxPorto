@@ -1,7 +1,7 @@
 from django.test import TestCase
 from django.urls import reverse
 
-from main.models import Experience, Project
+from main.models import Experience, Project, Skill
 
 
 class ProjectPageTest(TestCase):
@@ -207,3 +207,107 @@ class SeedExperienceDataTest(TestCase):
             expected_titles,
         )
         self.assertTrue(all(experience.is_ongoing for experience in experiences))
+
+
+class SkillModelTest(TestCase):
+    def test_skill_stores_display_data(self):
+        skill = Skill.objects.create(
+            name="Python",
+            category="language",
+            icon="img/python.png",
+            display_order=4,
+        )
+
+        self.assertEqual(str(skill), "Python")
+        self.assertEqual(skill.category, "language")
+        self.assertEqual(skill.icon, "img/python.png")
+        self.assertEqual(skill.display_order, 4)
+
+
+class SkillPageTest(TestCase):
+    def setUp(self):
+        Skill.objects.all().delete()
+
+    def test_skill_page_uses_skills_template(self):
+        response = self.client.get(reverse("main:show_skills"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, "skills.html")
+
+    def test_skill_page_renders_database_data_in_display_order(self):
+        second_skill = Skill.objects.create(
+            name="Django",
+            category="backend",
+            icon="img/django.png",
+            display_order=2,
+        )
+        first_skill = Skill.objects.create(
+            name="Python",
+            category="language",
+            icon="img/python.png",
+            display_order=1,
+        )
+
+        response = self.client.get(reverse("main:show_skills"))
+        content = response.content.decode()
+
+        self.assertContains(response, first_skill.name)
+        self.assertContains(response, second_skill.name)
+        self.assertContains(response, "/static/img/python.png")
+        self.assertContains(response, 'data-category="language"')
+        self.assertLess(content.index(first_skill.name), content.index(second_skill.name))
+
+    def test_skill_page_shows_empty_state_without_data(self):
+        response = self.client.get(reverse("main:show_skills"))
+
+        self.assertContains(response, "No skills have been added yet.")
+
+    def test_homepages_link_to_matching_skill_pages(self):
+        english_response = self.client.get(reverse("landing_page"))
+        indonesian_response = self.client.get(reverse("landing_page_id"))
+
+        self.assertContains(
+            english_response,
+            f'href="{reverse("main:show_skills")}"',
+        )
+        self.assertContains(
+            indonesian_response,
+            f'href="{reverse("main:show_skills_id")}"',
+        )
+
+    def test_homepage_does_not_duplicate_skill_cards(self):
+        response = self.client.get(reverse("landing_page"))
+
+        self.assertNotContains(response, 'class="skill-card"')
+
+    def test_indonesian_skill_page_uses_localized_labels(self):
+        response = self.client.get(reverse("main:show_skills_id"))
+
+        self.assertContains(response, 'lang="id"')
+        self.assertContains(response, "Keahlian")
+        self.assertContains(response, "Semua")
+        self.assertContains(response, "Bahasa Pemrograman")
+        self.assertContains(response, "Alat")
+
+
+class SeedSkillDataTest(TestCase):
+    def test_twelve_portfolio_skills_are_available_in_order(self):
+        expected_names = [
+            "C",
+            "C++",
+            "Java",
+            "Python",
+            "JavaScript",
+            "Git",
+            "GitHub",
+            "Jupyter Notebook",
+            "Visual Studio Code",
+            "Django",
+            "HTML",
+            "CSS",
+        ]
+
+        self.assertEqual(
+            list(Skill.objects.values_list("name", flat=True)),
+            expected_names,
+        )

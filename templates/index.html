@@ -34,7 +34,11 @@
         {% else %}
         <a href="{% url 'main:show_experiences' %}">{{ copy.experience }}</a
         {% endif %}
-        ><a href="#skills">{{ copy.skills }}</a
+        {% if copy.language == "id" %}
+        ><a href="{% url 'main:show_skills_id' %}">{{ copy.skills }}</a
+        {% else %}
+        ><a href="{% url 'main:show_skills' %}">{{ copy.skills }}</a
+        {% endif %}
         ><a href="{% url 'main:show_projects' %}">{{ copy.project }}</a
         ><a href="#achievements">{{ copy.achievements }}</a
         ><a href="#contact">Contact</a
@@ -94,76 +98,8 @@
           />
         </div>
       </section>
-      <section class="section" id="skills">
-        <p class="eyebrow">01 / {{ copy.skills }}</p>
-        <h2>{{ copy.skills }}</h2>
-        <div class="skills-catalog">
-          <input id="filter-all" name="skill-filter" type="radio" checked />
-          <input id="filter-language" name="skill-filter" type="radio" />
-          <input id="filter-tool" name="skill-filter" type="radio" />
-          <input id="filter-backend" name="skill-filter" type="radio" />
-          <input id="filter-frontend" name="skill-filter" type="radio" />
-          <div class="skill-filters">
-            <label for="filter-all">All</label>
-            <label for="filter-language">Languages</label>
-            <label for="filter-tool">Tools</label>
-            <label for="filter-backend">Backend</label>
-            <label for="filter-frontend">Frontend</label>
-          </div>
-          <div class="skill-cards">
-            <article class="skill-card" data-category="language">
-              <img src="{% static 'img/c.png' %}" alt="" />
-              <strong>C</strong>
-            </article>
-            <article class="skill-card" data-category="language">
-              <img src="{% static 'img/c++.png' %}" alt="" />
-              <strong>C++</strong>
-            </article>
-            <article class="skill-card" data-category="language">
-              <img src="{% static 'img/java.png' %}" alt="" />
-              <strong>Java</strong>
-            </article>
-            <article class="skill-card" data-category="language">
-              <img src="{% static 'img/python.png' %}" alt="" />
-              <strong>Python</strong>
-            </article>
-            <article class="skill-card" data-category="language">
-              <img src="{% static 'img/js.png' %}" alt="" />
-              <strong>JavaScript</strong>
-            </article>
-            <article class="skill-card" data-category="tool">
-              <img src="{% static 'img/git.png' %}" alt="" />
-              <strong>Git</strong>
-            </article>
-            <article class="skill-card" data-category="tool">
-              <img src="{% static 'img/github.png' %}" alt="" />
-              <strong>GitHub</strong>
-            </article>
-            <article class="skill-card" data-category="tool">
-              <img src="{% static 'img/jupyter.png' %}" alt="" />
-              <strong>Jupyter Notebook</strong>
-            </article>
-            <article class="skill-card" data-category="tool">
-              <img src="{% static 'img/vscode.png' %}" alt="" />
-              <strong>Visual Studio Code</strong>
-            </article>
-            <article class="skill-card" data-category="backend">
-              <img src="{% static 'img/django.png' %}" alt="" />
-              <strong>Django</strong>
-            </article>
-            <article class="skill-card" data-category="frontend">
-              <img src="{% static 'img/html.png' %}" alt="" />
-              <strong>HTML</strong>
-            </article>
-            <article class="skill-card" data-category="frontend">
-              <img src="{% static 'img/css.png' %}" alt="" />
-              <strong>CSS</strong>
-            </article>
-          </div>
-        </div>
-      </section>
       <section class="section" id="achievements">
-        <p class="eyebrow">02 / {{ copy.achievements }}</p>
+        <p class="eyebrow">01 / {{ copy.achievements }}</p>
         <h2>{{ copy.achievements }}</h2>
         <div class="card-grid">
           <article>
@@ -173,7 +109,7 @@
         </div>
       </section>
       <section class="section" id="contact">
-        <p class="eyebrow">03 / Contact</p>
+        <p class="eyebrow">02 / Contact</p>
         <h2>{{ copy.contact }}</h2>
         <div class="hero-links">
           <a>maximus.quinn@gmail.com</a>

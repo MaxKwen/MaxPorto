@@ -14,7 +14,7 @@
     />
     <link rel="stylesheet" href="{% static 'css/style.css' %}" />
   </head>
-  <body class="projects-body">
+  <body>
     <input class="theme-toggle" id="theme-toggle" type="checkbox" />
     <header class="site-header">
       <a class="brand" href="{% url 'landing_page' %}">MaxKwen</a>
@@ -32,14 +32,14 @@
             <a href="{% url 'main:show_projects_id' %}">{{ copy.projects }}</a>
             <a href="{% url 'landing_page_id' %}#achievements">{{ copy.achievements }}</a>
             <a href="{% url 'landing_page_id' %}#contact">{{ copy.contact }}</a>
-            <a class="language-link" href="{% url 'main:show_experiences' %}">{{ copy.switch_label }}</a>
+            <a class="language-link" href="{% url 'main:show_skills' %}">{{ copy.switch_label }}</a>
           {% else %}
             <a href="{% url 'main:show_experiences' %}">{{ copy.experience }}</a>
             <a href="{% url 'main:show_skills' %}">{{ copy.skills }}</a>
             <a href="{% url 'main:show_projects' %}">{{ copy.projects }}</a>
             <a href="{% url 'landing_page' %}#achievements">{{ copy.achievements }}</a>
             <a href="{% url 'landing_page' %}#contact">{{ copy.contact }}</a>
-            <a class="language-link" href="{% url 'main:show_experiences_id' %}">{{ copy.switch_label }}</a>
+            <a class="language-link" href="{% url 'main:show_skills_id' %}">{{ copy.switch_label }}</a>
           {% endif %}
           <label class="theme-switch" for="theme-toggle" title="Switch light mode">
             <span class="theme-switch__dark" aria-hidden="true">◐</span>
@@ -50,34 +50,35 @@
       </div>
     </header>
     <main>
-      <section class="section projects-page experience-page">
+      <section class="section projects-page skills-page">
         <div class="projects-heading">
           <p class="eyebrow">{{ copy.eyebrow }}</p>
           <h1>{{ copy.page_title }}</h1>
           <p class="projects-intro">{{ copy.intro }}</p>
         </div>
-        <div class="experience-grid">
-          {% for experience in experience_list %}
-            <article class="experience-card">
-              <div class="experience-card__meta">
-                <span class="experience-period">
-                  {{ experience.start_year }} — {{ experience.end_year|default:copy.present }}
-                </span>
-                <span class="experience-category">{{ experience.category }}</span>
-              </div>
-              {% if copy.language == "id" %}
-                <h2>{{ experience.title_id|default:experience.title }}</h2>
-                <p class="experience-organization">{{ experience.organization_id|default:experience.organization }}</p>
-                <p>{{ experience.description_id|default:experience.description }}</p>
-              {% else %}
-                <h2>{{ experience.title }}</h2>
-                <p class="experience-organization">{{ experience.organization }}</p>
-                <p>{{ experience.description }}</p>
-              {% endif %}
-            </article>
-          {% empty %}
-            <p class="empty-state">{{ copy.empty_state }}</p>
-          {% endfor %}
+        <div class="skills-catalog">
+          <input id="filter-all" name="skill-filter" type="radio" checked />
+          <input id="filter-language" name="skill-filter" type="radio" />
+          <input id="filter-tool" name="skill-filter" type="radio" />
+          <input id="filter-backend" name="skill-filter" type="radio" />
+          <input id="filter-frontend" name="skill-filter" type="radio" />
+          <div class="skill-filters">
+            <label for="filter-all">{{ copy.filter_all }}</label>
+            <label for="filter-language">{{ copy.filter_language }}</label>
+            <label for="filter-tool">{{ copy.filter_tool }}</label>
+            <label for="filter-backend">{{ copy.filter_backend }}</label>
+            <label for="filter-frontend">{{ copy.filter_frontend }}</label>
+          </div>
+          <div class="skill-cards">
+            {% for skill in skill_list %}
+              <article class="skill-card" data-category="{{ skill.category }}">
+                <img src="{% static skill.icon %}" alt="" />
+                <strong>{{ skill.name }}</strong>
+              </article>
+            {% empty %}
+              <p class="empty-state">{{ copy.empty_state }}</p>
+            {% endfor %}
+          </div>
         </div>
       </section>
     </main>

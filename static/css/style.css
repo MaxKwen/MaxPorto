@@ -447,6 +447,23 @@ h3 {
 
 .skill-card strong { text-align: center; }
 
+.skills-page .skill-cards {
+  grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr));
+}
+
+.skills-page .skill-card {
+  height: 10.5rem;
+}
+
+.skills-page .empty-state {
+  grid-column: 1 / -1;
+  padding: 2rem;
+  border: 1px dashed var(--line);
+  border-radius: 1rem;
+  color: var(--muted);
+  text-align: center;
+}
+
 .skills-catalog:has(#filter-language:checked) .skill-card:not([data-category="language"]),
 .skills-catalog:has(#filter-tool:checked) .skill-card:not([data-category="tool"]),
 .skills-catalog:has(#filter-backend:checked) .skill-card:not([data-category="backend"]),

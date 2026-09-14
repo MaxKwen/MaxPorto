@@ -35,3 +35,16 @@ class Experience(models.Model):
 
     def __str__(self):
         return self.title
+
+
+class Skill(models.Model):
+    name = models.CharField(max_length=100)
+    category = models.CharField(max_length=50)
+    icon = models.CharField(max_length=255)
+    display_order = models.PositiveSmallIntegerField(default=0)
+
+    class Meta:
+        ordering = ("display_order", "name")
+
+    def __str__(self):
+        return self.name
