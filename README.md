@@ -142,24 +142,41 @@ penyimpanan preferensi tema, serta halaman detail proyek.
 
 ### Tugas 2
 
-1. Jelaskan alur yang terjadi ketika pengguna membuka halaman portofolio baru,
-   mulai dari permintaan yang diterima proyek hingga data ditampilkan pada
-   browser. Dalam jawabanmu, jelaskan peran `urls.py` proyek, `urls.py`
-   aplikasi, view, model, dan template.
+### 1. Jelaskan alur yang terjadi ketika pengguna membuka halaman portofolio baru, mulai dari permintaan yang diterima proyek hingga data ditampilkan pada browser. Dalam jawabanmu, jelaskan peran `urls.py` proyek, `urls.py` aplikasi, view, model, dan template.
 
-   Jawaban:
+Alur yang saya lihat ketika ada pengguna yang membuka halaman portofolio adalah contohnya ketika membuka /projects/, alurnya:
+Browser -> urls.pt proyek -> urls.py aplikasi -> view.py -> model/database -> template -> browser
+Penjelasannya:
+a. Ketika pengguna membuka http://127.0.0.1:8000/projects/. Browser akan mengirim request GET ke server Django.
+b. urls.py proyek akan menerima dan mengarahkan request tersebut. Django pertama kali akan memeriksa `portofolio/urls.py`, yaitu konfigurasi URL utama proyek. Di proyek terdapat : `path("", include("main.urls"))`. include akan memberi tahu Django bahwa URL yang belum ditangani di tingkat proyek perlu dicocokkan dengan pola URL dalam `main/urls.py`.
+c. Selanjutnya urls.py aplikasi akan memilih view. Di `main/urls.py` ada route: `path("projects/", show_projects, name="show_projects")`. Karena URL yang diminta adalah /projects/, Django menjalankan view show_projects.
+d. Lalu view akan mengambil daya melalui model. View show_projects pada main/views.py menjalankan `Project.objects.all()`. Project adalah model yang didefinisikan dalam `main/models.py`. Melalui Django ORM, perintah tersebut diterjemahkan menjadi query ke database untuk mengambil seluruh data proyek. Setelah itu, view menyusun context yang akan menjadi penghubung antara data Python di view dan template HTML.
+e. Selanjutnya view memanggil `render(request, "projects.html", context)`. Django membuka templates/projects.html dan memberikan context tersebut. Template menampilkan setiap proyek menggunakan perulangan: `{% for project in project_list %}`. Atribut model juga dapat diakses dengan ekspresi seperti: `{{ project.title }}, {{ project.description }}, {{ project.category }}`. Jika tidak ada data, bagian `{% empty %}` akan menampilkan pesan belum ada proyek.
+f. Setelah template selesai dirender, Django menghasilkan dokumen HTML lengkap. HTML tersebut dikirim sebagai HTTP response, kemudian browser membacanya dan menampilkan halaman kepada pengguna.
 
-2. Mengapa data untuk bagian portofolio baru sebaiknya disimpan pada model dan
-   tidak ditulis langsung di dalam template? Jelaskan dampaknya terhadap
-   kemudahan pemeliharaan dan pengembangan aplikasi.
+### 2. Mengapa data untuk bagian portofolio baru sebaiknya disimpan pada model dan tidak ditulis langsung di dalam template? Jelaskan dampaknya terhadap kemudahan pemeliharaan dan pengembangan aplikasi.
 
-   Jawaban:
+Karena model memisahkan data dari tampilan. Template seharusnya bertanggung jawab terhadap presentasi, bukan menjadi tempat penyimpanan data. Jika judul, deskripsi, kategori, dan tautan proyek ditulis langsung di dalam `projects.html`, setiap perubahan data mengharuskan pengembang mencari dan mengedit HTML. Hal ini menimbulkan beberapa masalah:
+- Data dan struktur tampilan bercampur.
+- Template menjadi panjang dan sulit dibaca.
+- Data yang sama sulit digunakan kembali pada halaman lain.
+- Perubahan desain berisiko ikut mengubah atau menghapus data.
+- Fitur seperti pencarian, pengurutan, filter, dan halaman detail lebih sulit dikembangkan.
+Jika data disimpan pada model, template cukup melakukan perulangan terhadap project_list. Menambahkan proyek baru berarti menambahkan record ke database tanpa mengubah struktur template.Contohnya, satu template ini:
+> {% for project in project_list %}
+>   {{ project.title }}
+> {% endfor %}
+dapat menampilkan satu, sepuluh, maupun seratus proyek tanpa perlu menyalin struktur HTML secara manual. Dengan begitu, pemeliharaan website juga lebih efektif dan efisien karena struktur kode lebih terorganisasi, perubahan data tidak memerlukan perubahan template, dan kesalahan saat memperbarui data lebih mudah dicegah. Intinya, model menangani “apa datanya”, sedangkan template menangani “bagaimana data tersebut ditampilkan”. Pemisahan tanggung jawab ini membuat aplikasi lebih mudah dirawat dan dikembangkan.
 
-3. Apa perbedaan fungsi `makemigrations` dan `migrate` pada Django? Berikan
-   contoh perubahan model yang mengharuskanmu menjalankan kedua perintah
-   tersebut.
+### 3. Apa perbedaan fungsi `makemigrations` dan `migrate` pada Django? Berikan contoh perubahan model yang mengharuskanmu menjalankan kedua perintah tersebut.
 
-   Jawaban:
+Makemigrations dan migrate sama-sama berhubungan dengan perubahan struktur database, tetapi memiliki fungsi yang berbeda. Makemigrations memeriksa perubahan yang dibuat pada `models.py`, kemudian membuat file migrasi berisi instruksi perubahan skema database. Perintah ini belum mengubah database. Ia hanya menghasilkan “rencana perubahan”, misalnya file `main/migrations/0010_project_created_at.py`. Sedangkan migrate membaca file-file migrasi yang belum diterapkan, lalu benar-benar menjalankan perubahan tersebut pada database. Contoh perubahan model:
+Misalnya model Project awalnya belum memiliki tanggal pembuatan, lalu ditambahkan field berikut:
+> class Project(models.Model):
+>   title = models.CharField(max_length=255)
+>   description = models.TextField()
+>   created_at = models.DateTimeField(auto_now_add=True)
+Setelah mengubah models.py, jalankan makemigrations dan migrate. Django akan mengeksekusi migrasi tersebut sehingga tabel Project di database benar-benar memiliki kolom created_at. Jika hanya menjalankan makemigrations, file rencana perubahan sudah ada, tetapi database belum berubah. Jika mencoba menggunakan field created_at sebelum menjalankan migrate, aplikasi dapat mengalami error karena kolom tersebut belum tersedia di database.
 
 ## Progres pengembangan
 
@@ -183,6 +200,13 @@ check` dan `python manage.py test`. Pengembangan dilakukan secara bertahap:
 setiap bagian diimplementasikan dan diuji secara terpisah, kemudian hasilnya
 saya tinjau sebelum di-commit. Keputusan fitur, pemilihan konten, aset gambar,
 dan perubahan akhir tetap berada pada saya sebagai pemilik proyek.
+
+### Chat history
+
+Riwayat percakapan yang tersimpan selama pengembangan Tugas 2 tersedia di
+folder [`docs/ai-chat-history/`](docs/ai-chat-history/). Riwayat diekspor
+langsung dari sesi Hermes Agent dengan redaksi otomatis untuk informasi
+sensitif.
 
 ### Keterbatasan AI
 
