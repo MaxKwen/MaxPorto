@@ -1,6 +1,6 @@
 from django.shortcuts import render
 
-from main.models import Experience, Project, Skill
+from main.models import Achievement, Experience, Project, Skill
 
 
 PROJECT_COPY = {
@@ -112,6 +112,37 @@ SKILL_COPY = {
     },
 }
 
+ACHIEVEMENT_COPY = {
+    "en": {
+        "language": "en",
+        "page_title": "Achievements",
+        "meta_description": "Achievements of Maximus Quinn Hertada.",
+        "experience": "Experience",
+        "skills": "Skills",
+        "projects": "Projects",
+        "achievements": "Achievements",
+        "contact": "Contact",
+        "switch_label": "ID",
+        "eyebrow": "Portfolio / Achievements",
+        "intro": "Milestones from academic competitions and continuous learning.",
+        "empty_state": "No achievements have been added yet.",
+    },
+    "id": {
+        "language": "id",
+        "page_title": "Prestasi",
+        "meta_description": "Prestasi Maximus Quinn Hertada.",
+        "experience": "Pengalaman",
+        "skills": "Keahlian",
+        "projects": "Proyek",
+        "achievements": "Prestasi",
+        "contact": "Kontak",
+        "switch_label": "EN",
+        "eyebrow": "Portofolio / Prestasi",
+        "intro": "Pencapaian dari kompetisi akademik dan proses belajar berkelanjutan.",
+        "empty_state": "Belum ada prestasi yang ditambahkan.",
+    },
+}
+
 
 def show_projects(request, language="en"):
     context = {
@@ -132,3 +163,11 @@ def show_experiences(request, language="en"):
 def show_skills(request, language="en"):
     context = {"copy": SKILL_COPY[language], "skill_list": Skill.objects.all()}
     return render(request, "skills.html", context)
+
+
+def show_achievements(request, language="en"):
+    context = {
+        "copy": ACHIEVEMENT_COPY[language],
+        "achievement_list": Achievement.objects.all(),
+    }
+    return render(request, "achievements.html", context)

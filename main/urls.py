@@ -1,10 +1,17 @@
 from django.urls import path
 
-from main.views import show_experiences, show_projects, show_skills
+from main.views import show_achievements, show_experiences, show_projects, show_skills
 
 app_name = "main"
 
 urlpatterns = [
+    path("achievements/", show_achievements, name="show_achievements"),
+    path(
+        "id/achievements/",
+        show_achievements,
+        {"language": "id"},
+        name="show_achievements_id",
+    ),
     path("skills/", show_skills, name="show_skills"),
     path(
         "id/skills/",

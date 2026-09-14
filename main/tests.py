@@ -1,7 +1,7 @@
 from django.test import TestCase
 from django.urls import reverse
 
-from main.models import Experience, Project, Skill
+from main.models import Achievement, Experience, Project, Skill
 
 
 class ProjectPageTest(TestCase):
@@ -310,4 +310,108 @@ class SeedSkillDataTest(TestCase):
         self.assertEqual(
             list(Skill.objects.values_list("name", flat=True)),
             expected_names,
+        )
+
+
+class AchievementModelTest(TestCase):
+    def test_achievement_stores_bilingual_display_data(self):
+        achievement = Achievement.objects.create(
+            title="OSN Informatics",
+            title_id="Informatika OSN",
+            result="National finalist",
+            result_id="Finalis nasional",
+            category="Competition",
+            year=None,
+            display_order=1,
+        )
+
+        self.assertEqual(str(achievement), "OSN Informatics")
+        self.assertIsNone(achievement.year)
+        self.assertEqual(achievement.display_order, 1)
+
+
+class AchievementPageTest(TestCase):
+    def setUp(self):
+        Achievement.objects.all().delete()
+
+    def test_achievement_page_uses_achievements_template(self):
+        response = self.client.get(reverse("main:show_achievements"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, "achievements.html")
+
+    def test_achievement_page_renders_database_data_in_display_order(self):
+        second_achievement = Achievement.objects.create(
+            title="AMO",
+            result="Bronze medal",
+            category="Competition",
+            year=2024,
+            display_order=2,
+        )
+        first_achievement = Achievement.objects.create(
+            title="OSN Informatics",
+            result="National finalist",
+            category="Competition",
+            year=2023,
+            display_order=1,
+        )
+
+        response = self.client.get(reverse("main:show_achievements"))
+        content = response.content.decode()
+
+        self.assertContains(response, first_achievement.title)
+        self.assertContains(response, first_achievement.result)
+        self.assertContains(response, first_achievement.category)
+        self.assertContains(response, str(first_achievement.year))
+        self.assertLess(
+            content.index(first_achievement.title),
+            content.index(second_achievement.title),
+        )
+
+    def test_indonesian_achievement_page_uses_translated_data(self):
+        achievement = Achievement.objects.create(
+            title="OSN Informatics",
+            title_id="Informatika OSN",
+            result="National finalist",
+            result_id="Finalis nasional",
+            category="Competition",
+            display_order=1,
+        )
+
+        response = self.client.get(reverse("main:show_achievements_id"))
+
+        self.assertContains(response, 'lang="id"')
+        self.assertContains(response, achievement.title_id)
+        self.assertContains(response, achievement.result_id)
+        self.assertNotContains(response, achievement.result)
+
+    def test_achievement_page_shows_empty_state_without_data(self):
+        response = self.client.get(reverse("main:show_achievements"))
+
+        self.assertContains(response, "No achievements have been added yet.")
+
+    def test_homepages_link_to_matching_achievement_pages(self):
+        english_response = self.client.get(reverse("landing_page"))
+        indonesian_response = self.client.get(reverse("landing_page_id"))
+
+        self.assertContains(
+            english_response,
+            f'href="{reverse("main:show_achievements")}"',
+        )
+        self.assertContains(
+            indonesian_response,
+            f'href="{reverse("main:show_achievements_id")}"',
+        )
+
+    def test_homepage_does_not_duplicate_achievement_cards(self):
+        response = self.client.get(reverse("landing_page"))
+
+        self.assertNotContains(response, "OSN Informatics")
+
+
+class SeedAchievementDataTest(TestCase):
+    def test_two_portfolio_achievements_are_available_in_order(self):
+        self.assertEqual(
+            list(Achievement.objects.values_list("title", flat=True)),
+            ["OSN Informatics", "AMO"],
         )

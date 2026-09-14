@@ -48,3 +48,19 @@ class Skill(models.Model):
 
     def __str__(self):
         return self.name
+
+
+class Achievement(models.Model):
+    title = models.CharField(max_length=255)
+    title_id = models.CharField(max_length=255, blank=True, default="")
+    result = models.CharField(max_length=255)
+    result_id = models.CharField(max_length=255, blank=True, default="")
+    category = models.CharField(max_length=100)
+    year = models.PositiveSmallIntegerField(null=True, blank=True)
+    display_order = models.PositiveSmallIntegerField(default=0)
+
+    class Meta:
+        ordering = ("display_order", "title")
+
+    def __str__(self):
+        return self.title
