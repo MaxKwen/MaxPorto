@@ -1,10 +1,18 @@
 from django.urls import path
 
-from main.views import show_achievements, show_projects, show_skills
+from main.views import (
+    create_project,
+    delete_project,
+    get_projects_json,
+    show_achievements,
+    show_projects,
+    show_skills,
+)
 
 app_name = "main"
 
 urlpatterns = [
+    path("api/projects/", get_projects_json, name="get_projects_json"),
     path("achievements/", show_achievements, name="show_achievements"),
     path(
         "id/achievements/",
@@ -20,6 +28,12 @@ urlpatterns = [
         name="show_skills_id",
     ),
     path("projects/", show_projects, name="show_projects"),
+    path("projects/add/", create_project, name="create_project"),
+    path(
+        "projects/<int:project_id>/delete/",
+        delete_project,
+        name="delete_project",
+    ),
     path(
         "id/projects/",
         show_projects,

@@ -1,5 +1,10 @@
-from django.shortcuts import render
+from django.contrib import messages
+from django.core import serializers
+from django.http import HttpResponse
+from django.shortcuts import get_object_or_404, redirect, render
+from django.views.decorators.http import require_POST
 
+from main.forms import ProjectForm
 from main.models import Achievement, Project, Skill
 
 
@@ -17,6 +22,15 @@ PROJECT_COPY = {
         "intro": "Selected work across software, connected devices, and applied research.",
         "featured": "Featured project",
         "view_project": "View project",
+        "add_project": "Add Project",
+        "search": "Search",
+        "search_placeholder": "Search by project title",
+        "no_results": "No projects match that title.",
+        "delete_project": "Delete Project",
+        "delete_title": "Delete project?",
+        "delete_prompt": "Are you sure you want to delete",
+        "cancel": "Cancel",
+        "confirm_delete": "Yes, delete",
         "empty_state": "No projects have been added yet.",
     },
     "id": {
@@ -32,6 +46,15 @@ PROJECT_COPY = {
         "intro": "Karya pilihan dalam perangkat lunak, perangkat terhubung, dan riset terapan.",
         "featured": "Proyek unggulan",
         "view_project": "Lihat proyek",
+        "add_project": "Tambah Proyek",
+        "search": "Cari",
+        "search_placeholder": "Cari berdasarkan judul proyek",
+        "no_results": "Tidak ada proyek dengan judul tersebut.",
+        "delete_project": "Hapus Proyek",
+        "delete_title": "Hapus proyek?",
+        "delete_prompt": "Apakah kamu yakin ingin menghapus",
+        "cancel": "Batal",
+        "confirm_delete": "Ya, hapus",
         "empty_state": "Belum ada proyek yang ditambahkan.",
     },
 }
@@ -105,12 +128,52 @@ ACHIEVEMENT_COPY = {
 }
 
 
+def get_projects_json(request):
+    title_query = request.GET.get("title", "").strip()
+    projects = Project.objects.all()
+    if title_query:
+        projects = projects.filter(title__icontains=title_query)
+
+    projects_json = serializers.serialize("json", projects)
+    return HttpResponse(projects_json, content_type="application/json")
+
+
 def show_projects(request, language="en"):
+    json_response = get_projects_json(request)
+    projects = serializers.deserialize(
+        "json",
+        json_response.content.decode("utf-8"),
+    )
+    projects = [project.object for project in projects]
+    title_query = request.GET.get("title", "").strip()
     context = {
         "copy": PROJECT_COPY[language],
-        "project_list": Project.objects.all(),
+        "project_list": projects,
+        "title_query": title_query,
     }
     return render(request, "projects.html", context)
+
+
+def create_project(request):
+    form = ProjectForm(request.POST or None)
+    if request.method == "POST" and form.is_valid():
+        form.save()
+        messages.success(request, "Proyek baru berhasil ditambahkan!")
+        return redirect("main:show_projects")
+
+    context = {
+        "copy": PROJECT_COPY["en"],
+        "form": form,
+    }
+    return render(request, "projects_form.html", context)
+
+
+@require_POST
+def delete_project(request, project_id):
+    project = get_object_or_404(Project, pk=project_id)
+    project.delete()
+    messages.success(request, "Proyek berhasil dihapus!")
+    return redirect("main:show_projects")
 
 
 def show_skills(request, language="en"):

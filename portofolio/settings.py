@@ -150,3 +150,6 @@ MAILERS = {
         'BACKEND': 'django.core.mail.backends.console.EmailBackend',
     },
 }
+
+# CSRF
+CSRF_TRUSTED_ORIGINS = [ "https://maximus-quinn-maxporto.pws.cs.ui.ac.id",]

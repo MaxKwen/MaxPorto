@@ -1,3 +1,7 @@
+import json
+from importlib import import_module
+
+from django.conf import settings
 from django.test import TestCase
 from django.urls import reverse
 
@@ -5,16 +9,62 @@ from main.models import Achievement, Experience, Project, Skill
 
 
 class ProjectPageTest(TestCase):
+    def test_project_page_css_allows_content_to_scroll(self):
+        css = (settings.BASE_DIR / "static" / "css" / "style.css").read_text()
+        desktop_rule = css.split("@media (min-width: 1001px)", 1)[1].split(
+            "@media", 1
+        )[0]
+
+        self.assertNotIn("overflow: hidden", desktop_rule)
+        self.assertIn("min-height: 100vh", desktop_rule)
+
     def test_project_page_uses_projects_template(self):
         response = self.client.get(reverse("main:show_projects"))
 
         self.assertEqual(response.status_code, 200)
         self.assertTemplateUsed(response, "projects.html")
+        self.assertTemplateUsed(response, "base.html")
+
+    def test_project_page_links_to_create_project_form(self):
+        response = self.client.get(reverse("main:show_projects"))
+
+        self.assertContains(
+            response,
+            f'href="{reverse("main:create_project")}"',
+        )
+        self.assertContains(response, "Add Project")
+
+    def test_project_page_filters_projects_by_title(self):
+        matching_project = Project.objects.create(
+            title="Searchable Observatory",
+            description="The project that should be shown.",
+            category="Backend",
+        )
+        hidden_project = Project.objects.create(
+            title="Hidden Greenhouse",
+            description="The project that should be filtered out.",
+            category="IoT",
+        )
+
+        response = self.client.get(
+            reverse("main:show_projects"),
+            {"title": "observatory"},
+        )
+
+        self.assertContains(response, matching_project.title)
+        self.assertNotContains(response, hidden_project.title)
+        self.assertContains(response, 'value="observatory"')
 
     def test_homepage_links_to_project_page(self):
         response = self.client.get(reverse("landing_page"))
 
         self.assertContains(response, f'href="{reverse("main:show_projects")}"')
+
+    def test_homepage_uses_base_template(self):
+        response = self.client.get(reverse("landing_page"))
+
+        self.assertTemplateUsed(response, "index.html")
+        self.assertTemplateUsed(response, "base.html")
 
     def test_homepage_does_not_duplicate_project_cards(self):
         response = self.client.get(reverse("landing_page"))
@@ -37,6 +87,7 @@ class ProjectPageTest(TestCase):
         self.assertContains(response, project.description)
         self.assertContains(response, project.category)
         self.assertContains(response, project.project_url)
+        self.assertContains(response, project.thumbnail)
         self.assertContains(response, "Featured project")
 
     def test_project_page_shows_empty_state_without_data(self):
@@ -82,6 +133,160 @@ class ProjectModelTest(TestCase):
         )
         self.assertEqual(project.category, "Backend")
         self.assertFalse(project.is_featured)
+
+
+class ProjectFormTest(TestCase):
+    def test_project_form_exposes_portfolio_project_fields(self):
+        forms_module = import_module("main.forms")
+        project_form_class = getattr(forms_module, "ProjectForm", None)
+
+        self.assertIsNotNone(project_form_class)
+        self.assertEqual(
+            list(project_form_class().fields),
+            [
+                "title",
+                "description",
+                "title_id",
+                "description_id",
+                "category",
+                "project_url",
+                "thumbnail",
+                "is_featured",
+            ],
+        )
+
+    def test_project_form_uses_helpful_labels_and_widgets(self):
+        project_form_class = getattr(import_module("main.forms"), "ProjectForm")
+        form = project_form_class()
+
+        self.assertEqual(form.fields["title"].label, "Nama Proyek (Inggris)")
+        self.assertEqual(form.fields["description"].widget.attrs["rows"], 4)
+        self.assertEqual(
+            form.fields["project_url"].widget.attrs["placeholder"],
+            "https://github.com/username/project",
+        )
+        self.assertEqual(
+            form.fields["thumbnail"].widget.attrs["placeholder"],
+            "https://example.com/project.png",
+        )
+        self.assertEqual(form.fields["is_featured"].label, "Proyek Unggulan")
+
+
+class ProjectCreateViewTest(TestCase):
+    def test_create_project_page_displays_project_form(self):
+        project_form_class = getattr(import_module("main.forms"), "ProjectForm")
+
+        response = self.client.get(reverse("main:create_project"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, "projects_form.html")
+        self.assertIsInstance(response.context["form"], project_form_class)
+        self.assertContains(response, "csrfmiddlewaretoken")
+
+    def test_create_project_saves_valid_submission(self):
+        response = self.client.post(
+            reverse("main:create_project"),
+            {
+                "title": "Personal Portfolio",
+                "description": "A portfolio built with Django.",
+                "title_id": "Portofolio Pribadi",
+                "description_id": "Portofolio yang dibuat dengan Django.",
+                "category": "Backend",
+                "project_url": "https://example.com/portfolio",
+                "thumbnail": "https://example.com/portfolio.png",
+                "is_featured": "on",
+            },
+        )
+
+        self.assertRedirects(response, reverse("main:show_projects"))
+        project = Project.objects.get(title="Personal Portfolio")
+        self.assertEqual(project.title_id, "Portofolio Pribadi")
+        self.assertTrue(project.is_featured)
+
+    def test_create_project_displays_success_message(self):
+        response = self.client.post(
+            reverse("main:create_project"),
+            {
+                "title": "Message Test Project",
+                "description": "A project created to test feedback.",
+                "category": "Backend",
+            },
+            follow=True,
+        )
+
+        self.assertContains(response, "Proyek baru berhasil ditambahkan!")
+
+
+class ProjectDataDeliveryTest(TestCase):
+    def test_projects_json_endpoint_serializes_projects(self):
+        project = Project.objects.create(
+            title="JSON Portfolio",
+            description="Project exposed through the JSON endpoint.",
+            category="Backend",
+        )
+
+        response = self.client.get(reverse("main:get_projects_json"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response["Content-Type"], "application/json")
+        payload = json.loads(response.content)
+        serialized_project = next(
+            item for item in payload if item["pk"] == project.pk
+        )
+        self.assertEqual(serialized_project["model"], "main.project")
+        self.assertEqual(serialized_project["fields"]["title"], project.title)
+
+    def test_projects_json_endpoint_filters_title_case_insensitively(self):
+        matching_project = Project.objects.create(
+            title="NeedleProjectXylophone",
+            description="The matching project.",
+            category="Backend",
+        )
+        Project.objects.create(
+            title="Unrelated Project",
+            description="This project should not match.",
+            category="Frontend",
+        )
+
+        response = self.client.get(
+            reverse("main:get_projects_json"),
+            {"title": "  needleproject  "},
+        )
+
+        payload = json.loads(response.content)
+        self.assertEqual([item["pk"] for item in payload], [matching_project.pk])
+
+
+class ProjectDeleteViewTest(TestCase):
+    def test_delete_project_removes_project_and_redirects(self):
+        project = Project.objects.create(
+            title="Disposable Prototype",
+            description="A project to remove.",
+            category="Prototype",
+        )
+
+        response = self.client.post(
+            reverse("main:delete_project", args=[project.pk]),
+        )
+
+        self.assertRedirects(response, reverse("main:show_projects"))
+        self.assertFalse(Project.objects.filter(pk=project.pk).exists())
+
+    def test_project_page_displays_delete_confirmation(self):
+        project = Project.objects.create(
+            title="Project With Delete Button",
+            description="A removable project.",
+            category="Backend",
+        )
+
+        response = self.client.get(reverse("main:show_projects"))
+
+        self.assertContains(
+            response,
+            f'action="{reverse("main:delete_project", args=[project.pk])}"',
+        )
+        self.assertContains(response, f'id="delete-project-{project.pk}"')
+        self.assertContains(response, "Delete Project")
 
 
 class SeedProjectDataTest(TestCase):
