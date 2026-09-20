@@ -410,6 +410,7 @@ class SkillPageTest(TestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertTemplateUsed(response, "skills.html")
+        self.assertTemplateUsed(response, "base.html")
 
     def test_skill_page_renders_database_data_in_display_order(self):
         second_skill = Skill.objects.create(
@@ -516,6 +517,7 @@ class AchievementPageTest(TestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertTemplateUsed(response, "achievements.html")
+        self.assertTemplateUsed(response, "base.html")
 
     def test_achievement_page_renders_database_data_in_display_order(self):
         second_achievement = Achievement.objects.create(
