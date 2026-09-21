@@ -287,10 +287,11 @@ dan perubahan akhir tetap berada pada saya sebagai pemilik proyek.
 
 ### Chat history
 
-Riwayat percakapan yang tersimpan selama pengembangan Tugas 2 tersedia di
-folder [`docs/ai-chat-history/`](docs/ai-chat-history/). Riwayat diekspor
-langsung dari sesi Hermes Agent dengan redaksi otomatis untuk informasi
-sensitif.
+Riwayat percakapan yang tersimpan selama pengembangan Tugas 2 dan Tugas 3
+tersedia di folder [`docs/ai-chat-history/`](docs/ai-chat-history/). Riwayat
+Tugas 3 diekspor dari sesi Hermes Agent ke
+[`20260919_072342_16904e-activate-.venv-in-powershell-2.md`](docs/ai-chat-history/20260919_072342_16904e-activate-.venv-in-powershell-2.md)
+dengan redaksi otomatis untuk informasi sensitif.
 
 ### Keterbatasan AI
 
