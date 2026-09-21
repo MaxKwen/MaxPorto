@@ -325,11 +325,14 @@ class ExperiencePageTest(TestCase):
     def setUp(self):
         Experience.objects.all().delete()
 
-    def test_standalone_experience_routes_are_removed(self):
-        self.assertEqual(self.client.get("/experience/").status_code, 404)
-        self.assertEqual(self.client.get("/id/experience/").status_code, 404)
+    def test_experience_page_uses_experiences_template(self):
+        response = self.client.get(reverse("main:show_experiences"))
 
-    def test_navigation_links_to_homepage_experience_section(self):
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, "experiences.html")
+        self.assertTemplateUsed(response, "base.html")
+
+    def test_navigation_links_to_matching_experience_pages(self):
         english_pages = [
             "landing_page",
             "main:show_projects",
@@ -346,14 +349,20 @@ class ExperiencePageTest(TestCase):
         for page_name in english_pages:
             with self.subTest(page_name=page_name):
                 response = self.client.get(reverse(page_name))
-                self.assertContains(response, 'href="/#experience"')
+                self.assertContains(
+                    response,
+                    f'href="{reverse("main:show_experiences")}"',
+                )
 
         for page_name in indonesian_pages:
             with self.subTest(page_name=page_name):
                 response = self.client.get(reverse(page_name))
-                self.assertContains(response, 'href="/id/#experience"')
+                self.assertContains(
+                    response,
+                    f'href="{reverse("main:show_experiences_id")}"',
+                )
 
-    def test_homepage_renders_experience_from_database(self):
+    def test_experience_page_renders_experience_from_database(self):
         experience = Experience.objects.create(
             title="Teaching Assistant, Intro to Digital System",
             organization="Faculty of Computer Science, University of Indonesia",
@@ -362,12 +371,46 @@ class ExperiencePageTest(TestCase):
             start_year=2026,
         )
 
-        response = self.client.get(reverse("landing_page"))
+        response = self.client.get(reverse("main:show_experiences"))
 
         self.assertContains(response, experience.title)
         self.assertContains(response, experience.organization)
         self.assertContains(response, experience.description)
         self.assertContains(response, "2026 — present")
+
+    def test_indonesian_experience_page_uses_translated_data(self):
+        experience = Experience.objects.create(
+            title="Teaching Assistant",
+            title_id="Asisten Pengajar",
+            organization="University of Indonesia",
+            organization_id="Universitas Indonesia",
+            description="Led weekly tutorials.",
+            description_id="Memimpin tutorial mingguan.",
+            category="Teaching",
+            start_year=2026,
+        )
+
+        response = self.client.get(reverse("main:show_experiences_id"))
+
+        self.assertContains(response, 'lang="id"')
+        self.assertContains(response, experience.title_id)
+        self.assertContains(response, experience.organization_id)
+        self.assertContains(response, experience.description_id)
+        self.assertNotContains(response, experience.description)
+
+    def test_homepage_does_not_duplicate_experience_cards(self):
+        experience = Experience.objects.create(
+            title="Standalone Experience Entry",
+            organization="University of Indonesia",
+            description="Shown only on the Experience page.",
+            category="Teaching",
+            start_year=2026,
+        )
+
+        response = self.client.get(reverse("landing_page"))
+
+        self.assertNotContains(response, experience.title)
+        self.assertNotContains(response, 'class="experience-card"')
 
 
 class SeedExperienceDataTest(TestCase):

@@ -5,6 +5,7 @@ from main.views import (
     delete_project,
     get_projects_json,
     show_achievements,
+    show_experiences,
     show_projects,
     show_skills,
 )
@@ -13,6 +14,13 @@ app_name = "main"
 
 urlpatterns = [
     path("api/projects/", get_projects_json, name="get_projects_json"),
+    path("experience/", show_experiences, name="show_experiences"),
+    path(
+        "id/experience/",
+        show_experiences,
+        {"language": "id"},
+        name="show_experiences_id",
+    ),
     path("achievements/", show_achievements, name="show_achievements"),
     path(
         "id/achievements/",

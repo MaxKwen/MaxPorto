@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+
+{% block title %}{{ copy.page_title }} - Maximus Quinn Hertada{% endblock title %}
+{% block meta_description %}{{ copy.meta_description }}{% endblock meta_description %}
+{% block body_class %}projects-body{% endblock body_class %}
+
+{% block language_switch %}
+  {% if copy.language == "id" %}
+    <a class="language-link" href="{% url 'main:show_experiences' %}">{{ copy.switch_label }}</a>
+  {% else %}
+    <a class="language-link" href="{% url 'main:show_experiences_id' %}">{{ copy.switch_label }}</a>
+  {% endif %}
+{% endblock language_switch %}
+
+{% block content %}
+  <section class="section projects-page experience-page">
+    <div class="projects-heading">
+      <p class="eyebrow">{{ copy.eyebrow }}</p>
+      <h1>{{ copy.page_title }}</h1>
+      <p class="projects-intro">{{ copy.intro }}</p>
+    </div>
+    <div class="experience-grid">
+      {% for experience in experience_list %}
+        <article class="experience-card">
+          <div class="experience-card__meta">
+            <span class="experience-period">
+              {{ experience.start_year }} — {{ experience.end_year|default:copy.present }}
+            </span>
+            <span class="experience-category">{{ experience.category }}</span>
+          </div>
+          {% if copy.language == "id" %}
+            <h2>{{ experience.title_id|default:experience.title }}</h2>
+            <p class="experience-organization">{{ experience.organization_id|default:experience.organization }}</p>
+            <p>{{ experience.description_id|default:experience.description }}</p>
+          {% else %}
+            <h2>{{ experience.title }}</h2>
+            <p class="experience-organization">{{ experience.organization }}</p>
+            <p>{{ experience.description }}</p>
+          {% endif %}
+        </article>
+      {% empty %}
+        <p class="empty-state">{{ copy.empty_state }}</p>
+      {% endfor %}
+    </div>
+  </section>
+{% endblock content %}

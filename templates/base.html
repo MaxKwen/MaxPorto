@@ -40,12 +40,12 @@
         </label>
         <nav aria-label="Primary navigation">
           {% if copy.language == "id" %}
-            <a href="{% url 'landing_page_id' %}#experience">{{ copy.experience }}</a>
+            <a href="{% url 'main:show_experiences_id' %}">{{ copy.experience }}</a>
             <a href="{% url 'main:show_skills_id' %}">{{ copy.skills }}</a>
             <a href="{% url 'main:show_projects_id' %}">{% firstof copy.projects copy.project %}</a>
             <a href="{% url 'main:show_achievements_id' %}">{{ copy.achievements }}</a>
           {% else %}
-            <a href="{% url 'landing_page' %}#experience">{{ copy.experience }}</a>
+            <a href="{% url 'main:show_experiences' %}">{{ copy.experience }}</a>
             <a href="{% url 'main:show_skills' %}">{{ copy.skills }}</a>
             <a href="{% url 'main:show_projects' %}">{% firstof copy.projects copy.project %}</a>
             <a href="{% url 'main:show_achievements' %}">{{ copy.achievements }}</a>

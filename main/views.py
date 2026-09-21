@@ -5,7 +5,7 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.http import require_POST
 
 from main.forms import ProjectForm
-from main.models import Achievement, Project, Skill
+from main.models import Achievement, Experience, Project, Skill
 
 
 PROJECT_COPY = {
@@ -56,6 +56,37 @@ PROJECT_COPY = {
         "cancel": "Batal",
         "confirm_delete": "Ya, hapus",
         "empty_state": "Belum ada proyek yang ditambahkan.",
+    },
+}
+
+EXPERIENCE_COPY = {
+    "en": {
+        "language": "en",
+        "page_title": "Experience",
+        "meta_description": "Experience of Maximus Quinn Hertada.",
+        "experience": "Experience",
+        "skills": "Skills",
+        "projects": "Projects",
+        "achievements": "Achievements",
+        "switch_label": "ID",
+        "eyebrow": "Portfolio / Experience",
+        "intro": "Roles and communities that have shaped my professional growth.",
+        "present": "present",
+        "empty_state": "No experience has been added yet.",
+    },
+    "id": {
+        "language": "id",
+        "page_title": "Pengalaman",
+        "meta_description": "Pengalaman Maximus Quinn Hertada.",
+        "experience": "Pengalaman",
+        "skills": "Keahlian",
+        "projects": "Proyek",
+        "achievements": "Prestasi",
+        "switch_label": "EN",
+        "eyebrow": "Portofolio / Pengalaman",
+        "intro": "Peran dan komunitas yang membentuk perkembangan profesional saya.",
+        "present": "sekarang",
+        "empty_state": "Belum ada pengalaman yang ditambahkan.",
     },
 }
 
@@ -174,6 +205,14 @@ def delete_project(request, project_id):
     project.delete()
     messages.success(request, "Proyek berhasil dihapus!")
     return redirect("main:show_projects")
+
+
+def show_experiences(request, language="en"):
+    context = {
+        "copy": EXPERIENCE_COPY[language],
+        "experience_list": Experience.objects.order_by("-start_year", "id"),
+    }
+    return render(request, "experiences.html", context)
 
 
 def show_skills(request, language="en"):
