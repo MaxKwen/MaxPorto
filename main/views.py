@@ -74,6 +74,7 @@ EXPERIENCE_COPY = {
         "eyebrow": "Portfolio / Experience",
         "intro": "Roles and communities that have shaped my professional growth.",
         "add_experience": "Add Experience",
+        "edit_experience": "Edit Experience",
         "present": "present",
         "empty_state": "No experience has been added yet.",
     },
@@ -89,6 +90,7 @@ EXPERIENCE_COPY = {
         "eyebrow": "Portofolio / Pengalaman",
         "intro": "Peran dan komunitas yang membentuk perkembangan profesional saya.",
         "add_experience": "Tambah Pengalaman",
+        "edit_experience": "Edit Pengalaman",
         "present": "sekarang",
         "empty_state": "Belum ada pengalaman yang ditambahkan.",
     },
@@ -146,6 +148,7 @@ ACHIEVEMENT_COPY = {
         "eyebrow": "Portfolio / Achievements",
         "intro": "Milestones from academic competitions and continuous learning.",
         "add_achievement": "Add Achievement",
+        "edit_achievement": "Edit Achievement",
         "empty_state": "No achievements have been added yet.",
     },
     "id": {
@@ -160,6 +163,7 @@ ACHIEVEMENT_COPY = {
         "eyebrow": "Portofolio / Prestasi",
         "intro": "Pencapaian dari kompetisi akademik dan proses belajar berkelanjutan.",
         "add_achievement": "Tambah Prestasi",
+        "edit_achievement": "Edit Prestasi",
         "empty_state": "Belum ada prestasi yang ditambahkan.",
     },
 }
@@ -256,6 +260,31 @@ def create_experience(request):
     context = {
         "copy": EXPERIENCE_COPY["en"],
         "form": form,
+        "form_title": "Add Experience",
+        "form_eyebrow": "Portfolio / Experience",
+        "form_heading": "Add Experience",
+        "form_intro": "Add a role or organization to your portfolio.",
+        "submit_label": "Tambah Pengalaman",
+    }
+    return render(request, "experiences_form.html", context)
+
+
+def update_experience(request, experience_id):
+    experience = get_object_or_404(Experience, pk=experience_id)
+    form = ExperienceForm(request.POST or None, instance=experience)
+    if request.method == "POST" and form.is_valid():
+        form.save()
+        messages.success(request, "Pengalaman berhasil diperbarui!")
+        return redirect("main:show_experiences")
+
+    context = {
+        "copy": EXPERIENCE_COPY["en"],
+        "form": form,
+        "form_title": "Update Experience",
+        "form_eyebrow": "Portfolio / Experience",
+        "form_heading": "Update Experience",
+        "form_intro": "Update this experience in your portfolio.",
+        "submit_label": "Simpan Perubahan",
     }
     return render(request, "experiences_form.html", context)
 
@@ -283,5 +312,30 @@ def create_achievement(request):
     context = {
         "copy": ACHIEVEMENT_COPY["en"],
         "form": form,
+        "form_title": "Add Achievement",
+        "form_eyebrow": "Portfolio / Achievements",
+        "form_heading": "Add Achievement",
+        "form_intro": "Add an achievement to your portfolio.",
+        "submit_label": "Tambah Prestasi",
+    }
+    return render(request, "achievements_form.html", context)
+
+
+def update_achievement(request, achievement_id):
+    achievement = get_object_or_404(Achievement, pk=achievement_id)
+    form = AchievementForm(request.POST or None, instance=achievement)
+    if request.method == "POST" and form.is_valid():
+        form.save()
+        messages.success(request, "Prestasi berhasil diperbarui!")
+        return redirect("main:show_achievements")
+
+    context = {
+        "copy": ACHIEVEMENT_COPY["en"],
+        "form": form,
+        "form_title": "Update Achievement",
+        "form_eyebrow": "Portfolio / Achievements",
+        "form_heading": "Update Achievement",
+        "form_intro": "Update this achievement in your portfolio.",
+        "submit_label": "Simpan Perubahan",
     }
     return render(request, "achievements_form.html", context)

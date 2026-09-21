@@ -371,6 +371,134 @@ class AchievementCreateViewTest(TestCase):
         self.assertContains(response, "Add Achievement")
 
 
+class ExperienceUpdateViewTest(TestCase):
+    def setUp(self):
+        self.experience = Experience.objects.create(
+            title="Original Role",
+            title_id="Peran Awal",
+            organization="Original Organization",
+            organization_id="Organisasi Awal",
+            description="Original description.",
+            description_id="Deskripsi awal.",
+            category="Organization",
+            start_year=2025,
+        )
+        self.experience_count = Experience.objects.count()
+
+    def test_update_experience_page_displays_bound_form(self):
+        experience_form_class = getattr(import_module("main.forms"), "ExperienceForm")
+
+        response = self.client.get(
+            reverse("main:update_experience", args=[self.experience.pk])
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, "experiences_form.html")
+        self.assertIsInstance(response.context["form"], experience_form_class)
+        self.assertEqual(response.context["form"].instance, self.experience)
+        self.assertContains(response, "Update Experience")
+
+    def test_update_experience_saves_changes_without_creating_duplicate(self):
+        response = self.client.post(
+            reverse("main:update_experience", args=[self.experience.pk]),
+            {
+                "title": "Updated Role",
+                "title_id": "Peran Diperbarui",
+                "organization": "Updated Organization",
+                "organization_id": "Organisasi Diperbarui",
+                "description": "Updated description.",
+                "description_id": "Deskripsi diperbarui.",
+                "category": "Teaching",
+                "start_year": 2025,
+                "end_year": 2026,
+            },
+        )
+
+        self.assertRedirects(response, reverse("main:show_experiences"))
+        self.assertEqual(Experience.objects.count(), self.experience_count)
+        self.experience.refresh_from_db()
+        self.assertEqual(self.experience.title, "Updated Role")
+        self.assertEqual(self.experience.end_year, 2026)
+
+    def test_experience_page_links_to_update_form(self):
+        response = self.client.get(reverse("main:show_experiences"))
+
+        self.assertContains(
+            response,
+            f'href="{reverse("main:update_experience", args=[self.experience.pk])}"',
+        )
+        self.assertContains(response, "Edit Experience")
+
+    def test_update_experience_returns_not_found_for_unknown_entry(self):
+        response = self.client.get(reverse("main:update_experience", args=[999999]))
+
+        self.assertEqual(response.status_code, 404)
+
+
+class AchievementUpdateViewTest(TestCase):
+    def setUp(self):
+        self.achievement = Achievement.objects.create(
+            title="Original Achievement",
+            title_id="Prestasi Awal",
+            result="Original result",
+            result_id="Hasil awal",
+            category="Competition",
+            year=2025,
+            display_order=10,
+        )
+        self.achievement_count = Achievement.objects.count()
+
+    def test_update_achievement_page_displays_bound_form(self):
+        achievement_form_class = getattr(
+            import_module("main.forms"),
+            "AchievementForm",
+        )
+
+        response = self.client.get(
+            reverse("main:update_achievement", args=[self.achievement.pk])
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, "achievements_form.html")
+        self.assertIsInstance(response.context["form"], achievement_form_class)
+        self.assertEqual(response.context["form"].instance, self.achievement)
+        self.assertContains(response, "Update Achievement")
+
+    def test_update_achievement_saves_changes_without_creating_duplicate(self):
+        response = self.client.post(
+            reverse("main:update_achievement", args=[self.achievement.pk]),
+            {
+                "title": "Updated Achievement",
+                "title_id": "Prestasi Diperbarui",
+                "result": "Updated result",
+                "result_id": "Hasil diperbarui",
+                "category": "Certification",
+                "year": 2026,
+                "display_order": 2,
+            },
+        )
+
+        self.assertRedirects(response, reverse("main:show_achievements"))
+        self.assertEqual(Achievement.objects.count(), self.achievement_count)
+        self.achievement.refresh_from_db()
+        self.assertEqual(self.achievement.title, "Updated Achievement")
+        self.assertEqual(self.achievement.display_order, 2)
+
+    def test_achievement_page_links_to_update_form(self):
+        response = self.client.get(reverse("main:show_achievements"))
+
+        self.assertContains(
+            response,
+            f'href="{reverse("main:update_achievement", args=[self.achievement.pk])}"',
+        )
+        self.assertContains(response, "Edit Achievement")
+
+    def test_update_achievement_returns_not_found_for_unknown_entry(self):
+        response = self.client.get(reverse("main:update_achievement", args=[999999]))
+
+        self.assertEqual(response.status_code, 404)
+
+
 class ProjectCreateViewTest(TestCase):
     def test_create_project_page_displays_project_form(self):
         project_form_class = getattr(import_module("main.forms"), "ProjectForm")

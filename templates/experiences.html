@@ -43,6 +43,11 @@
             <p class="experience-organization">{{ experience.organization }}</p>
             <p>{{ experience.description }}</p>
           {% endif %}
+          <div class="project-card-actions">
+            <a class="project-link" href="{% url 'main:update_experience' experience.pk %}">
+              {{ copy.edit_experience }}
+            </a>
+          </div>
         </article>
       {% empty %}
         <p class="empty-state">{{ copy.empty_state }}</p>

@@ -41,6 +41,11 @@
                 <h2>{{ achievement.title }}</h2>
                 <p>{{ achievement.result }}</p>
               {% endif %}
+              <div class="project-card-actions">
+                <a class="project-link" href="{% url 'main:update_achievement' achievement.pk %}">
+                  {{ copy.edit_achievement }}
+                </a>
+              </div>
             </article>
           {% empty %}
             <p class="empty-state">{{ copy.empty_state }}</p>

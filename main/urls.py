@@ -10,6 +10,8 @@ from main.views import (
     show_experiences,
     show_projects,
     show_skills,
+    update_achievement,
+    update_experience,
     update_project,
 )
 
@@ -19,6 +21,11 @@ urlpatterns = [
     path("api/projects/", get_projects_json, name="get_projects_json"),
     path("experience/", show_experiences, name="show_experiences"),
     path("experience/add/", create_experience, name="create_experience"),
+    path(
+        "experience/<int:experience_id>/edit/",
+        update_experience,
+        name="update_experience",
+    ),
     path(
         "id/experience/",
         show_experiences,
@@ -30,6 +37,11 @@ urlpatterns = [
         "achievements/add/",
         create_achievement,
         name="create_achievement",
+    ),
+    path(
+        "achievements/<int:achievement_id>/edit/",
+        update_achievement,
+        name="update_achievement",
     ),
     path(
         "id/achievements/",
