@@ -1,0 +1,47 @@
+<button
+  type="button"
+  class="button button-danger"
+  popovertarget="{{ modal_prefix }}-{{ item.pk }}"
+  aria-label="{{ delete_label }}: {{ item.title }}"
+>
+  {{ delete_label }}
+</button>
+<div
+  id="{{ modal_prefix }}-{{ item.pk }}"
+  class="project-delete-modal"
+  popover="auto"
+  role="dialog"
+  aria-modal="true"
+  aria-labelledby="{{ modal_prefix }}-title-{{ item.pk }}"
+>
+  <button
+    type="button"
+    class="project-delete-modal__backdrop"
+    popovertarget="{{ modal_prefix }}-{{ item.pk }}"
+    popovertargetaction="hide"
+    aria-label="{{ cancel }}"
+  ></button>
+  <div class="project-delete-modal__content">
+    <button
+      type="button"
+      class="project-delete-modal__close"
+      popovertarget="{{ modal_prefix }}-{{ item.pk }}"
+      popovertargetaction="hide"
+      aria-label="{{ cancel }}"
+    >×</button>
+    <h2 id="{{ modal_prefix }}-title-{{ item.pk }}">{{ delete_title }}</h2>
+    <p>{{ delete_prompt }} <strong>{{ item.title }}</strong>?</p>
+    <div class="project-delete-modal__actions">
+      <button
+        type="button"
+        class="button button-secondary"
+        popovertarget="{{ modal_prefix }}-{{ item.pk }}"
+        popovertargetaction="hide"
+      >{{ cancel }}</button>
+      <form method="post" action="{% url delete_url_name item.pk %}">
+        {% csrf_token %}
+        <button type="submit" class="button button-danger">{{ confirm_delete }}</button>
+      </form>
+    </div>
+  </div>
+</div>

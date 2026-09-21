@@ -833,8 +833,21 @@ body:has(#theme-toggle:checked) .form-group textarea {
   gap: 0.45rem;
   margin-top: auto;
   padding: 0.5rem 0.7rem;
+  border: 1px solid var(--line);
   border-radius: 0.5rem;
+  color: var(--bright);
+  background: var(--surface);
   font-size: 0.8rem;
+  text-decoration: none;
+  transition:
+    transform 160ms ease,
+    border-color 160ms ease,
+    background-color 160ms ease;
+}
+
+.projects-page .project-link:hover {
+  border-color: var(--bright);
+  transform: translateY(-3px);
 }
 
 .projects-page .project-link span {
@@ -988,7 +1001,9 @@ body:has(#theme-toggle:checked) .form-group textarea {
 }
 
 .experience-card {
+  display: flex;
   min-height: 18rem;
+  flex-direction: column;
   padding: 1.4rem;
   border: 1px solid rgba(148, 191, 255, 0.22);
   border-radius: 1rem;
@@ -1068,7 +1083,9 @@ body:has(#theme-toggle:checked) .form-group textarea {
 }
 
 .achievement-card {
+  display: flex;
   min-height: 16rem;
+  flex-direction: column;
   padding: 1.4rem;
   border: 1px solid rgba(148, 191, 255, 0.22);
   border-radius: 1rem;

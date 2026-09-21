@@ -434,6 +434,19 @@ class ExperienceUpdateViewTest(TestCase):
 
         self.assertEqual(response.status_code, 404)
 
+    def test_experience_card_aligns_actions_like_project_card(self):
+        css = (settings.BASE_DIR / "static" / "css" / "style.css").read_text()
+        experience_rule = css.split(".experience-card {", 1)[1].split("}", 1)[0]
+        edit_button_rule = css.split(".projects-page .project-link {", 1)[1].split(
+            "}", 1
+        )[0]
+
+        self.assertIn("display: flex", experience_rule)
+        self.assertIn("flex-direction: column", experience_rule)
+        self.assertIn("border: 1px solid var(--line)", edit_button_rule)
+        self.assertIn("background: var(--surface)", edit_button_rule)
+        self.assertIn("text-decoration: none", edit_button_rule)
+
 
 class AchievementUpdateViewTest(TestCase):
     def setUp(self):
@@ -497,6 +510,87 @@ class AchievementUpdateViewTest(TestCase):
         response = self.client.get(reverse("main:update_achievement", args=[999999]))
 
         self.assertEqual(response.status_code, 404)
+
+    def test_achievement_card_aligns_actions_like_project_card(self):
+        css = (settings.BASE_DIR / "static" / "css" / "style.css").read_text()
+        achievement_rule = css.split(".achievement-card {", 1)[1].split("}", 1)[0]
+
+        self.assertIn("display: flex", achievement_rule)
+        self.assertIn("flex-direction: column", achievement_rule)
+
+
+class ExperienceDeleteViewTest(TestCase):
+    def setUp(self):
+        self.experience = Experience.objects.create(
+            title="Experience to Delete",
+            organization="University of Indonesia",
+            description="Temporary experience.",
+            category="Teaching",
+            start_year=2026,
+        )
+
+    def test_delete_experience_removes_entry_and_redirects(self):
+        response = self.client.post(
+            reverse("main:delete_experience", args=[self.experience.pk])
+        )
+
+        self.assertRedirects(response, reverse("main:show_experiences"))
+        self.assertFalse(Experience.objects.filter(pk=self.experience.pk).exists())
+
+    def test_delete_experience_rejects_get_request(self):
+        response = self.client.get(
+            reverse("main:delete_experience", args=[self.experience.pk])
+        )
+
+        self.assertEqual(response.status_code, 405)
+        self.assertTrue(Experience.objects.filter(pk=self.experience.pk).exists())
+
+    def test_experience_page_displays_delete_confirmation(self):
+        response = self.client.get(reverse("main:show_experiences"))
+
+        self.assertContains(
+            response,
+            f'action="{reverse("main:delete_experience", args=[self.experience.pk])}"',
+        )
+        self.assertContains(response, f'id="delete-experience-{self.experience.pk}"')
+        self.assertContains(response, "Delete Experience")
+
+
+class AchievementDeleteViewTest(TestCase):
+    def setUp(self):
+        self.achievement = Achievement.objects.create(
+            title="Achievement to Delete",
+            result="Temporary result",
+            category="Competition",
+            year=2026,
+            display_order=10,
+        )
+
+    def test_delete_achievement_removes_entry_and_redirects(self):
+        response = self.client.post(
+            reverse("main:delete_achievement", args=[self.achievement.pk])
+        )
+
+        self.assertRedirects(response, reverse("main:show_achievements"))
+        self.assertFalse(Achievement.objects.filter(pk=self.achievement.pk).exists())
+
+    def test_delete_achievement_rejects_get_request(self):
+        response = self.client.get(
+            reverse("main:delete_achievement", args=[self.achievement.pk])
+        )
+
+        self.assertEqual(response.status_code, 405)
+        self.assertTrue(Achievement.objects.filter(pk=self.achievement.pk).exists())
+
+    def test_achievement_page_displays_delete_confirmation(self):
+        response = self.client.get(reverse("main:show_achievements"))
+
+        self.assertContains(
+            response,
+            f'action="{reverse("main:delete_achievement", args=[self.achievement.pk])}"',
+        )
+        self.assertContains(response, f'id="delete-achievement-{self.achievement.pk}"')
+        self.assertContains(response, "Delete Achievement")
 
 
 class ProjectCreateViewTest(TestCase):

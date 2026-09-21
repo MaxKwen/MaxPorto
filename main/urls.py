@@ -4,6 +4,8 @@ from main.views import (
     create_achievement,
     create_experience,
     create_project,
+    delete_achievement,
+    delete_experience,
     delete_project,
     get_projects_json,
     show_achievements,
@@ -27,6 +29,11 @@ urlpatterns = [
         name="update_experience",
     ),
     path(
+        "experience/<int:experience_id>/delete/",
+        delete_experience,
+        name="delete_experience",
+    ),
+    path(
         "id/experience/",
         show_experiences,
         {"language": "id"},
@@ -42,6 +49,11 @@ urlpatterns = [
         "achievements/<int:achievement_id>/edit/",
         update_achievement,
         name="update_achievement",
+    ),
+    path(
+        "achievements/<int:achievement_id>/delete/",
+        delete_achievement,
+        name="delete_achievement",
     ),
     path(
         "id/achievements/",
