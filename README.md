@@ -200,6 +200,67 @@ class Project(models.Model):
 
 Setelah mengubah models.py, jalankan makemigrations dan migrate. Django akan mengeksekusi migrasi tersebut sehingga tabel Project di database benar-benar memiliki kolom created_at. Jika hanya menjalankan makemigrations, file rencana perubahan sudah ada, tetapi database belum berubah. Jika mencoba menggunakan field created_at sebelum menjalankan migrate, aplikasi dapat mengalami error karena kolom tersebut belum tersedia di database.
 
+### Tugas 3
+
+### 1. Jelaskan mengapa kita menggunakan `ModelForm` pada Django alih-alih membuat form HTML secara manual. Selain itu, jelaskan pula mengapa kita diwajibkan menambahkan `{% csrf_token %}` pada form tersebut!
+
+Saya menggunakan `ModelForm` karena form pada proyek ini berhubungan langsung
+dengan model Django. Django dapat membentuk field form berdasarkan definisi
+model, misalnya `CharField` menjadi input teks, `TextField` menjadi textarea,
+dan `PositiveSmallIntegerField` menjadi input angka. Pada proyek ini,
+`ExperienceForm`, `ProjectForm`, dan `AchievementForm` juga menggunakan
+`form.is_valid()` untuk memvalidasi input serta `form.save()` untuk membuat atau
+memperbarui objek. Jika form dibuat secara manual, setiap input harus
+didefinisikan, diambil dari `request.POST`, divalidasi, dikonversi ke tipe yang
+sesuai, dan disimpan satu per satu. Hal tersebut menghasilkan lebih banyak
+duplikasi dan lebih mudah tidak konsisten dengan model.
+
+`{% csrf_token %}` digunakan untuk melindungi request yang mengubah data dari
+serangan Cross-Site Request Forgery. Django membandingkan token pada form dengan
+token yang terkait dengan sesi pengguna. Tanpa perlindungan tersebut, situs
+berbahaya dapat membuat form tersembunyi yang mengirim request ke aplikasi ini.
+Jika pengguna masih memiliki cookie atau sesi aktif, browser dapat menjalankan
+request tersebut atas nama pengguna sehingga data dapat ditambah, diubah, atau
+dihapus tanpa persetujuannya. Karena itu, seluruh form POST pada proyek ini
+memakai `csrf_token`, sedangkan fungsi delete juga dibatasi dengan
+`@require_POST`.
+
+### 2. Pada Tutorial 03, kita membahas format data JSON dan XML. Mengapa JSON lebih disukai dalam pengembangan aplikasi web modern dibandingkan XML?
+
+JSON lebih disukai karena sintaksnya lebih ringkas dan strukturnya sesuai dengan
+objek serta array yang umum digunakan dalam JavaScript. Ukuran data JSON
+biasanya lebih kecil karena tidak memerlukan tag pembuka dan penutup seperti
+XML. JSON juga dapat diproses langsung dengan fungsi seperti `JSON.parse()` dan
+`JSON.stringify()`, sehingga integrasinya dengan aplikasi web dan REST API lebih
+sederhana.
+
+XML tetap berguna untuk sistem yang membutuhkan namespace, atribut kompleks,
+validasi berbasis schema, atau kompatibilitas dengan sistem lama. Namun, untuk
+pertukaran data pada aplikasi web seperti portofolio ini, JSON lebih praktis,
+mudah dibaca, dan membutuhkan lebih sedikit kode untuk diproses.
+
+### 3. Jelaskan alur yang terjadi saat kamu menggunakan fungsi view untuk mengembalikan data portofoliomu dalam bentuk JSON. Mengapa kita perlu melakukan proses serialization pada model Django sebelum datanya dikembalikan?
+
+Sebagai contoh, ketika endpoint `/api/experiences/` dibuka, Django mencocokkan
+URL tersebut dengan fungsi `get_experiences_json`. Fungsi itu mengambil data
+Experience melalui Django ORM sebagai `QuerySet`, kemudian menjalankan
+`serializers.serialize("json", experiences)`. Hasil serialisasi dimasukkan ke
+`HttpResponse` dengan content type `application/json` dan dikirim kepada
+browser atau aplikasi yang meminta data.
+
+Pada halaman Experience, fungsi `show_experiences` memperoleh response JSON
+tersebut, mengubah content dari bytes menjadi string UTF-8, lalu menjalankan
+`serializers.deserialize("json", ...)`. Objek hasil deserialisasi dimasukkan ke
+context sebagai `experience_list` dan ditampilkan oleh `experiences.html`.
+Project dan Achievement menggunakan alur serupa melalui `/api/projects/` dan
+`/api/achievements/`.
+
+Serialization diperlukan karena `QuerySet` dan objek model Django bukan data
+JSON biasa dan tidak dapat langsung dikirim melalui HTTP. Serialization
+mengubah objek tersebut menjadi representasi teks yang dapat dikirim melalui
+jaringan, dibaca oleh aplikasi lain, dan direkonstruksi kembali melalui proses
+deserialization.
+
 ## Progres pengembangan
 
 | Periode | Fokus | Hasil |
