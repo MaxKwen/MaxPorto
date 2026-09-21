@@ -284,6 +284,93 @@ class AchievementFormTest(TestCase):
         self.assertEqual(achievement.display_order, 1)
 
 
+class ExperienceCreateViewTest(TestCase):
+    def test_create_experience_page_displays_experience_form(self):
+        experience_form_class = getattr(import_module("main.forms"), "ExperienceForm")
+
+        response = self.client.get(reverse("main:create_experience"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, "experiences_form.html")
+        self.assertTemplateUsed(response, "base.html")
+        self.assertIsInstance(response.context["form"], experience_form_class)
+        self.assertContains(response, "csrfmiddlewaretoken")
+
+    def test_create_experience_saves_valid_submission(self):
+        response = self.client.post(
+            reverse("main:create_experience"),
+            {
+                "title": "Research Assistant",
+                "title_id": "Asisten Riset",
+                "organization": "University of Indonesia",
+                "organization_id": "Universitas Indonesia",
+                "description": "Supported applied research.",
+                "description_id": "Mendukung riset terapan.",
+                "category": "Research",
+                "start_year": 2025,
+                "end_year": 2026,
+            },
+        )
+
+        self.assertRedirects(response, reverse("main:show_experiences"))
+        experience = Experience.objects.get(title="Research Assistant")
+        self.assertEqual(experience.title_id, "Asisten Riset")
+        self.assertEqual(experience.end_year, 2026)
+
+    def test_experience_page_links_to_create_form(self):
+        response = self.client.get(reverse("main:show_experiences"))
+
+        self.assertContains(
+            response,
+            f'href="{reverse("main:create_experience")}"',
+        )
+        self.assertContains(response, "Add Experience")
+
+
+class AchievementCreateViewTest(TestCase):
+    def test_create_achievement_page_displays_achievement_form(self):
+        achievement_form_class = getattr(
+            import_module("main.forms"),
+            "AchievementForm",
+        )
+
+        response = self.client.get(reverse("main:create_achievement"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, "achievements_form.html")
+        self.assertTemplateUsed(response, "base.html")
+        self.assertIsInstance(response.context["form"], achievement_form_class)
+        self.assertContains(response, "csrfmiddlewaretoken")
+
+    def test_create_achievement_saves_valid_submission(self):
+        response = self.client.post(
+            reverse("main:create_achievement"),
+            {
+                "title": "Programming Competition",
+                "title_id": "Kompetisi Pemrograman",
+                "result": "Finalist",
+                "result_id": "Finalis",
+                "category": "Competition",
+                "year": 2026,
+                "display_order": 3,
+            },
+        )
+
+        self.assertRedirects(response, reverse("main:show_achievements"))
+        achievement = Achievement.objects.get(title="Programming Competition")
+        self.assertEqual(achievement.title_id, "Kompetisi Pemrograman")
+        self.assertEqual(achievement.display_order, 3)
+
+    def test_achievement_page_links_to_create_form(self):
+        response = self.client.get(reverse("main:show_achievements"))
+
+        self.assertContains(
+            response,
+            f'href="{reverse("main:create_achievement")}"',
+        )
+        self.assertContains(response, "Add Achievement")
+
+
 class ProjectCreateViewTest(TestCase):
     def test_create_project_page_displays_project_form(self):
         project_form_class = getattr(import_module("main.forms"), "ProjectForm")

@@ -14,10 +14,16 @@
 
 {% block content %}
   <section class="section projects-page experience-page">
-    <div class="projects-heading">
-      <p class="eyebrow">{{ copy.eyebrow }}</p>
-      <h1>{{ copy.page_title }}</h1>
-      <p class="projects-intro">{{ copy.intro }}</p>
+    <div class="projects-header">
+      <div class="projects-heading">
+        <p class="eyebrow">{{ copy.eyebrow }}</p>
+        <h1>{{ copy.page_title }}</h1>
+        <p class="projects-intro">{{ copy.intro }}</p>
+      </div>
+      <a class="button project-add-button" href="{% url 'main:create_experience' %}">
+        <span aria-hidden="true">+</span>
+        {{ copy.add_experience }}
+      </a>
     </div>
     <div class="experience-grid">
       {% for experience in experience_list %}

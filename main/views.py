@@ -4,7 +4,7 @@ from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.http import require_POST
 
-from main.forms import ProjectForm
+from main.forms import AchievementForm, ExperienceForm, ProjectForm
 from main.models import Achievement, Experience, Project, Skill
 
 
@@ -71,6 +71,7 @@ EXPERIENCE_COPY = {
         "switch_label": "ID",
         "eyebrow": "Portfolio / Experience",
         "intro": "Roles and communities that have shaped my professional growth.",
+        "add_experience": "Add Experience",
         "present": "present",
         "empty_state": "No experience has been added yet.",
     },
@@ -85,6 +86,7 @@ EXPERIENCE_COPY = {
         "switch_label": "EN",
         "eyebrow": "Portofolio / Pengalaman",
         "intro": "Peran dan komunitas yang membentuk perkembangan profesional saya.",
+        "add_experience": "Tambah Pengalaman",
         "present": "sekarang",
         "empty_state": "Belum ada pengalaman yang ditambahkan.",
     },
@@ -141,6 +143,7 @@ ACHIEVEMENT_COPY = {
         "switch_label": "ID",
         "eyebrow": "Portfolio / Achievements",
         "intro": "Milestones from academic competitions and continuous learning.",
+        "add_achievement": "Add Achievement",
         "empty_state": "No achievements have been added yet.",
     },
     "id": {
@@ -154,6 +157,7 @@ ACHIEVEMENT_COPY = {
         "switch_label": "EN",
         "eyebrow": "Portofolio / Prestasi",
         "intro": "Pencapaian dari kompetisi akademik dan proses belajar berkelanjutan.",
+        "add_achievement": "Tambah Prestasi",
         "empty_state": "Belum ada prestasi yang ditambahkan.",
     },
 }
@@ -215,6 +219,20 @@ def show_experiences(request, language="en"):
     return render(request, "experiences.html", context)
 
 
+def create_experience(request):
+    form = ExperienceForm(request.POST or None)
+    if request.method == "POST" and form.is_valid():
+        form.save()
+        messages.success(request, "Pengalaman baru berhasil ditambahkan!")
+        return redirect("main:show_experiences")
+
+    context = {
+        "copy": EXPERIENCE_COPY["en"],
+        "form": form,
+    }
+    return render(request, "experiences_form.html", context)
+
+
 def show_skills(request, language="en"):
     context = {"copy": SKILL_COPY[language], "skill_list": Skill.objects.all()}
     return render(request, "skills.html", context)
@@ -226,3 +244,17 @@ def show_achievements(request, language="en"):
         "achievement_list": Achievement.objects.all(),
     }
     return render(request, "achievements.html", context)
+
+
+def create_achievement(request):
+    form = AchievementForm(request.POST or None)
+    if request.method == "POST" and form.is_valid():
+        form.save()
+        messages.success(request, "Prestasi baru berhasil ditambahkan!")
+        return redirect("main:show_achievements")
+
+    context = {
+        "copy": ACHIEVEMENT_COPY["en"],
+        "form": form,
+    }
+    return render(request, "achievements_form.html", context)
