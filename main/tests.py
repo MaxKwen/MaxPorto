@@ -1,7 +1,10 @@
 import json
 from importlib import import_module
+from unittest.mock import patch
 
 from django.conf import settings
+from django.core import serializers
+from django.http import HttpResponse
 from django.test import TestCase
 from django.urls import reverse
 
@@ -737,6 +740,104 @@ class ProjectDataDeliveryTest(TestCase):
 
         payload = json.loads(response.content)
         self.assertEqual([item["pk"] for item in payload], [matching_project.pk])
+
+
+class ExperienceDataDeliveryTest(TestCase):
+    def test_experiences_json_endpoint_serializes_experiences(self):
+        experience = Experience.objects.create(
+            title="JSON Experience",
+            organization="University of Indonesia",
+            description="Experience exposed through the JSON endpoint.",
+            category="Teaching",
+            start_year=2026,
+        )
+
+        response = self.client.get(reverse("main:get_experiences_json"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response["Content-Type"], "application/json")
+        payload = json.loads(response.content)
+        serialized_experience = next(
+            item for item in payload if item["pk"] == experience.pk
+        )
+        self.assertEqual(serialized_experience["model"], "main.experience")
+        self.assertEqual(
+            serialized_experience["fields"]["title"],
+            experience.title,
+        )
+
+    def test_experience_page_deserializes_json_response(self):
+        experience = Experience.objects.create(
+            title="Deserialized Experience",
+            organization="University of Indonesia",
+            description="Rendered after JSON deserialization.",
+            category="Research",
+            start_year=2026,
+        )
+        payload = serializers.serialize(
+            "json",
+            Experience.objects.filter(pk=experience.pk),
+        )
+
+        with patch("main.views.get_experiences_json") as get_json:
+            get_json.return_value = HttpResponse(
+                payload,
+                content_type="application/json",
+            )
+            response = self.client.get(reverse("main:show_experiences"))
+
+        get_json.assert_called_once()
+        self.assertContains(response, experience.title)
+        self.assertContains(response, experience.description)
+
+
+class AchievementDataDeliveryTest(TestCase):
+    def test_achievements_json_endpoint_serializes_achievements(self):
+        achievement = Achievement.objects.create(
+            title="JSON Achievement",
+            result="Finalist",
+            category="Competition",
+            year=2026,
+            display_order=10,
+        )
+
+        response = self.client.get(reverse("main:get_achievements_json"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response["Content-Type"], "application/json")
+        payload = json.loads(response.content)
+        serialized_achievement = next(
+            item for item in payload if item["pk"] == achievement.pk
+        )
+        self.assertEqual(serialized_achievement["model"], "main.achievement")
+        self.assertEqual(
+            serialized_achievement["fields"]["title"],
+            achievement.title,
+        )
+
+    def test_achievement_page_deserializes_json_response(self):
+        achievement = Achievement.objects.create(
+            title="Deserialized Achievement",
+            result="National finalist",
+            category="Competition",
+            year=2026,
+            display_order=10,
+        )
+        payload = serializers.serialize(
+            "json",
+            Achievement.objects.filter(pk=achievement.pk),
+        )
+
+        with patch("main.views.get_achievements_json") as get_json:
+            get_json.return_value = HttpResponse(
+                payload,
+                content_type="application/json",
+            )
+            response = self.client.get(reverse("main:show_achievements"))
+
+        get_json.assert_called_once()
+        self.assertContains(response, achievement.title)
+        self.assertContains(response, achievement.result)
 
 
 class ProjectDeleteViewTest(TestCase):

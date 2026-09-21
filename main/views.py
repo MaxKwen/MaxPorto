@@ -262,10 +262,22 @@ def delete_project(request, project_id):
     return redirect("main:show_projects")
 
 
+def get_experiences_json(request):
+    experiences = Experience.objects.order_by("-start_year", "id")
+    experiences_json = serializers.serialize("json", experiences)
+    return HttpResponse(experiences_json, content_type="application/json")
+
+
 def show_experiences(request, language="en"):
+    json_response = get_experiences_json(request)
+    experiences = serializers.deserialize(
+        "json",
+        json_response.content.decode("utf-8"),
+    )
+    experiences = [experience.object for experience in experiences]
     context = {
         "copy": EXPERIENCE_COPY[language],
-        "experience_list": Experience.objects.order_by("-start_year", "id"),
+        "experience_list": experiences,
     }
     return render(request, "experiences.html", context)
 
@@ -322,10 +334,22 @@ def show_skills(request, language="en"):
     return render(request, "skills.html", context)
 
 
+def get_achievements_json(request):
+    achievements = Achievement.objects.all()
+    achievements_json = serializers.serialize("json", achievements)
+    return HttpResponse(achievements_json, content_type="application/json")
+
+
 def show_achievements(request, language="en"):
+    json_response = get_achievements_json(request)
+    achievements = serializers.deserialize(
+        "json",
+        json_response.content.decode("utf-8"),
+    )
+    achievements = [achievement.object for achievement in achievements]
     context = {
         "copy": ACHIEVEMENT_COPY[language],
-        "achievement_list": Achievement.objects.all(),
+        "achievement_list": achievements,
     }
     return render(request, "achievements.html", context)
 
