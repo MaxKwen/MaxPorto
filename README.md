@@ -12,12 +12,23 @@ disimpan dalam model Django dan dirender melalui template HTML.
 
 ## Fitur
 
-- Homepage bilingual: English di `/` dan Indonesia di `/id/`, dengan data
-  Experience dinamis dari database.
-- Halaman daftar bilingual untuk Projects, Skills, dan Achievements:
+- Homepage bilingual: English di `/` dan Indonesia di `/id/`, dengan hero yang
+  berisi identitas, peran, foto, dan tautan sosial.
+- Halaman daftar bilingual untuk Experience, Projects, Skills, dan Achievements:
+  - `/experience/` dan `/id/experience/`
   - `/projects/` dan `/id/projects/`
   - `/skills/` dan `/id/skills/`
   - `/achievements/` dan `/id/achievements/`
+- Pengelolaan data Experience, Project, dan Achievement melalui `ModelForm`,
+  lengkap dengan halaman create dan update serta modal konfirmasi delete.
+- Data Experience, Project, dan Achievement tersedia dalam format JSON melalui:
+  - `/api/experiences/`
+  - `/api/projects/`
+  - `/api/achievements/`
+- Halaman daftar Experience, Project, dan Achievement menampilkan objek yang
+  telah melalui proses serialisasi dan deserialisasi JSON.
+- Template memakai `base.html` sebagai root template bersama agar struktur
+  navigasi, metadata, theme toggle, message, dan footer tidak diduplikasi.
 - Data portofolio dirender menggunakan Django Template Language, lengkap dengan
   pesan kondisi kosong ketika belum ada data.
 - Navigasi antarkomponen menggunakan named URL Django dan menu hamburger
@@ -63,10 +74,11 @@ python manage.py test
 MaxPorto/
 ├── main/
 │   ├── migrations/         # Migrasi skema dan seed data portofolio
+│   ├── forms.py            # ModelForm Project, Experience, dan Achievement
 │   ├── models.py           # Model Project, Experience, Skill, dan Achievement
 │   ├── tests.py            # Test model, view, template, route, dan seed data
-│   ├── urls.py             # Named URL halaman daftar bilingual
-│   └── views.py            # Query model dan context halaman daftar
+│   ├── urls.py             # Named URL halaman, CRUD, dan endpoint JSON
+│   └── views.py            # CRUD, data delivery, deserialisasi, dan context
 ├── portofolio/
 │   ├── settings.py         # Konfigurasi proyek Django
 │   ├── urls.py             # URL proyek dan homepage bilingual
@@ -75,19 +87,25 @@ MaxPorto/
 │   ├── css/style.css       # Tema, layout, responsivitas, dan komponen UI
 │   └── img/                # Foto dan ikon lokal
 ├── templates/
-│   ├── index.html          # Homepage dan Experience dinamis
+│   ├── components/         # Komponen modal konfirmasi delete
+│   ├── base.html           # Root template bersama
+│   ├── index.html          # Homepage dan hero
+│   ├── experiences.html    # Daftar Experience
+│   ├── experiences_form.html
 │   ├── projects.html       # Daftar Project
+│   ├── projects_form.html
 │   ├── skills.html         # Daftar Skill
-│   └── achievements.html   # Daftar Achievement
+│   ├── achievements.html   # Daftar Achievement
+│   └── achievements_form.html
 ├── docs/                   # Catatan arsitektur dan progres pengembangan
 ├── requirements.txt
 └── manage.py
 ```
 
 Konten antarmuka bilingual disimpan dalam kamus copy pada view. Data portofolio
-diambil dari model melalui QuerySet, dimasukkan ke context oleh view, kemudian
-dirender oleh template menggunakan perulangan dan kondisi Django Template
-Language.
+diambil dari model melalui QuerySet, diserialisasi menjadi JSON, lalu
+dideserialisasi kembali menjadi objek model sebelum dimasukkan ke context dan
+dirender menggunakan perulangan serta kondisi Django Template Language.
 
 ## Pertanyaan reflektif
 
@@ -192,6 +210,7 @@ Setelah mengubah models.py, jalankan makemigrations dan migrate. Django akan men
 | 6 September 2026 | Pengayaan portofolio | Skill catalog, footer, tautan eksternal, konten pengalaman, proyek, dan pencapaian. |
 | 7 September 2026 | Responsivitas dan dokumentasi | Menu mobile, prioritas foto hero pada mobile, serta dokumentasi proyek. |
 | 11–14 September 2026 | Implementasi MVT | Model, migrasi, seed data, halaman daftar bilingual, navigasi, dan test untuk data portofolio dinamis. |
+| 14–19 September 2026 | Form dan data delivery | Root template bersama, halaman Experience terpisah, ModelForm, create, update, delete, modal konfirmasi, endpoint JSON, deserialisasi data, serta test untuk Experience, Project, dan Achievement. |
 
 ## AI disclosure
 
