@@ -172,6 +172,118 @@ class ProjectFormTest(TestCase):
         self.assertEqual(form.fields["is_featured"].label, "Proyek Unggulan")
 
 
+class ExperienceFormTest(TestCase):
+    def test_experience_form_exposes_all_editable_fields(self):
+        experience_form_class = getattr(
+            import_module("main.forms"),
+            "ExperienceForm",
+            None,
+        )
+
+        self.assertIsNotNone(experience_form_class)
+        self.assertEqual(
+            list(experience_form_class().fields),
+            [
+                "title",
+                "title_id",
+                "organization",
+                "organization_id",
+                "description",
+                "description_id",
+                "category",
+                "start_year",
+                "end_year",
+            ],
+        )
+
+    def test_experience_form_uses_helpful_labels_and_widgets(self):
+        experience_form_class = getattr(import_module("main.forms"), "ExperienceForm")
+        form = experience_form_class()
+
+        self.assertEqual(form.fields["title"].label, "Posisi (Inggris)")
+        self.assertEqual(form.fields["description"].widget.attrs["rows"], 4)
+        self.assertEqual(form.fields["start_year"].widget.attrs["min"], 1900)
+        self.assertEqual(form.fields["end_year"].required, False)
+
+    def test_experience_form_saves_valid_data(self):
+        experience_form_class = getattr(import_module("main.forms"), "ExperienceForm")
+        form = experience_form_class(
+            data={
+                "title": "Teaching Assistant",
+                "title_id": "Asisten Pengajar",
+                "organization": "University of Indonesia",
+                "organization_id": "Universitas Indonesia",
+                "description": "Led weekly tutorials.",
+                "description_id": "Memimpin tutorial mingguan.",
+                "category": "Teaching",
+                "start_year": 2026,
+                "end_year": "",
+            }
+        )
+
+        self.assertTrue(form.is_valid(), form.errors)
+        experience = form.save()
+        self.assertEqual(experience.title, "Teaching Assistant")
+        self.assertIsNone(experience.end_year)
+
+
+class AchievementFormTest(TestCase):
+    def test_achievement_form_exposes_all_editable_fields(self):
+        achievement_form_class = getattr(
+            import_module("main.forms"),
+            "AchievementForm",
+            None,
+        )
+
+        self.assertIsNotNone(achievement_form_class)
+        self.assertEqual(
+            list(achievement_form_class().fields),
+            [
+                "title",
+                "title_id",
+                "result",
+                "result_id",
+                "category",
+                "year",
+                "display_order",
+            ],
+        )
+
+    def test_achievement_form_uses_helpful_labels_and_widgets(self):
+        achievement_form_class = getattr(
+            import_module("main.forms"),
+            "AchievementForm",
+        )
+        form = achievement_form_class()
+
+        self.assertEqual(form.fields["title"].label, "Prestasi (Inggris)")
+        self.assertEqual(form.fields["year"].widget.attrs["min"], 1900)
+        self.assertEqual(form.fields["year"].required, False)
+        self.assertEqual(form.fields["display_order"].widget.attrs["min"], 0)
+
+    def test_achievement_form_saves_valid_data(self):
+        achievement_form_class = getattr(
+            import_module("main.forms"),
+            "AchievementForm",
+        )
+        form = achievement_form_class(
+            data={
+                "title": "OSN Informatics",
+                "title_id": "Informatika OSN",
+                "result": "National finalist",
+                "result_id": "Finalis nasional",
+                "category": "Competition",
+                "year": 2023,
+                "display_order": 1,
+            }
+        )
+
+        self.assertTrue(form.is_valid(), form.errors)
+        achievement = form.save()
+        self.assertEqual(achievement.title, "OSN Informatics")
+        self.assertEqual(achievement.display_order, 1)
+
+
 class ProjectCreateViewTest(TestCase):
     def test_create_project_page_displays_project_form(self):
         project_form_class = getattr(import_module("main.forms"), "ProjectForm")
