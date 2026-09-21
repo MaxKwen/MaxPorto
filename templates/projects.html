@@ -66,6 +66,9 @@
                     {{ copy.view_project }} <span aria-hidden="true">↗</span>
                   </a>
                 {% endif %}
+                <a class="project-link" href="{% url 'main:update_project' project.pk %}">
+                  {{ copy.edit_project }}
+                </a>
                 {% include "components/project_delete_modal.html" with project=project %}
               </div>
             </article>

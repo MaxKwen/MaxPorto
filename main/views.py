@@ -23,6 +23,7 @@ PROJECT_COPY = {
         "featured": "Featured project",
         "view_project": "View project",
         "add_project": "Add Project",
+        "edit_project": "Edit Project",
         "search": "Search",
         "search_placeholder": "Search by project title",
         "no_results": "No projects match that title.",
@@ -47,6 +48,7 @@ PROJECT_COPY = {
         "featured": "Proyek unggulan",
         "view_project": "Lihat proyek",
         "add_project": "Tambah Proyek",
+        "edit_project": "Edit Proyek",
         "search": "Cari",
         "search_placeholder": "Cari berdasarkan judul proyek",
         "no_results": "Tidak ada proyek dengan judul tersebut.",
@@ -199,6 +201,31 @@ def create_project(request):
     context = {
         "copy": PROJECT_COPY["en"],
         "form": form,
+        "form_title": "Add Project",
+        "form_eyebrow": "Portfolio / Projects",
+        "form_heading": "Add New Project",
+        "form_intro": "Add a project to your portfolio.",
+        "submit_label": "Tambah Proyek",
+    }
+    return render(request, "projects_form.html", context)
+
+
+def update_project(request, project_id):
+    project = get_object_or_404(Project, pk=project_id)
+    form = ProjectForm(request.POST or None, instance=project)
+    if request.method == "POST" and form.is_valid():
+        form.save()
+        messages.success(request, "Proyek berhasil diperbarui!")
+        return redirect("main:show_projects")
+
+    context = {
+        "copy": PROJECT_COPY["en"],
+        "form": form,
+        "form_title": "Update Project",
+        "form_eyebrow": "Portfolio / Projects",
+        "form_heading": "Update Project",
+        "form_intro": "Update this project in your portfolio.",
+        "submit_label": "Simpan Perubahan",
     }
     return render(request, "projects_form.html", context)
 

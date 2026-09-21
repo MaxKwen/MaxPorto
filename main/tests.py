@@ -416,6 +416,67 @@ class ProjectCreateViewTest(TestCase):
         self.assertContains(response, "Proyek baru berhasil ditambahkan!")
 
 
+class ProjectUpdateViewTest(TestCase):
+    def setUp(self):
+        self.project = Project.objects.create(
+            title="Original Project",
+            description="Original description.",
+            title_id="Proyek Awal",
+            description_id="Deskripsi awal.",
+            category="Backend",
+        )
+        self.project_count = Project.objects.count()
+
+    def test_update_project_page_displays_bound_project_form(self):
+        project_form_class = getattr(import_module("main.forms"), "ProjectForm")
+
+        response = self.client.get(
+            reverse("main:update_project", args=[self.project.pk])
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, "projects_form.html")
+        self.assertIsInstance(response.context["form"], project_form_class)
+        self.assertEqual(response.context["form"].instance, self.project)
+        self.assertContains(response, "Update Project")
+
+    def test_update_project_saves_changes_without_creating_duplicate(self):
+        response = self.client.post(
+            reverse("main:update_project", args=[self.project.pk]),
+            {
+                "title": "Updated Project",
+                "description": "Updated description.",
+                "title_id": "Proyek Diperbarui",
+                "description_id": "Deskripsi diperbarui.",
+                "category": "Full Stack",
+                "project_url": "https://example.com/updated",
+                "thumbnail": "",
+                "is_featured": "on",
+            },
+        )
+
+        self.assertRedirects(response, reverse("main:show_projects"))
+        self.assertEqual(Project.objects.count(), self.project_count)
+        self.project.refresh_from_db()
+        self.assertEqual(self.project.title, "Updated Project")
+        self.assertEqual(self.project.category, "Full Stack")
+        self.assertTrue(self.project.is_featured)
+
+    def test_project_page_links_to_update_form(self):
+        response = self.client.get(reverse("main:show_projects"))
+
+        self.assertContains(
+            response,
+            f'href="{reverse("main:update_project", args=[self.project.pk])}"',
+        )
+        self.assertContains(response, "Edit Project")
+
+    def test_update_project_returns_not_found_for_unknown_project(self):
+        response = self.client.get(reverse("main:update_project", args=[999999]))
+
+        self.assertEqual(response.status_code, 404)
+
+
 class ProjectDataDeliveryTest(TestCase):
     def test_projects_json_endpoint_serializes_projects(self):
         project = Project.objects.create(
