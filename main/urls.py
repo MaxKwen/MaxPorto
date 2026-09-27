@@ -17,6 +17,10 @@ from main.views import (
     update_achievement,
     update_experience,
     update_project,
+    register,
+    login_user,
+    logout_user,
+    toggle_star,
 )
 
 app_name = "main"
@@ -97,5 +101,13 @@ urlpatterns = [
         show_projects,
         {"language": "id"},
         name="show_projects_id",
+    ),
+    path("register/", register, name="register"),
+    path("login/", login_user, name="login"),
+    path("logout/", logout_user, name="logout"),
+    path(
+        "projects/<int:project_id>/star/",
+        toggle_star,
+        name="toggle_star",
     ),
 ]

@@ -3,6 +3,7 @@ from importlib import import_module
 from unittest.mock import patch
 
 from django.conf import settings
+from django.contrib.auth import get_user_model
 from django.core import serializers
 from django.http import HttpResponse
 from django.test import TestCase
@@ -1220,3 +1221,29 @@ class SeedAchievementDataTest(TestCase):
             list(Achievement.objects.values_list("title", flat=True)),
             ["OSN Informatics", "AMO"],
         )
+
+
+class AuthenticationViewTest(TestCase):
+    def setUp(self):
+        self.user = get_user_model().objects.create_user(
+            username="testuser",
+            password="test-password-123",
+        )
+
+    def test_successful_login_redirects_to_landing_page(self):
+        response = self.client.post(
+            reverse("main:login"),
+            {
+                "username": self.user.username,
+                "password": "test-password-123",
+            },
+        )
+
+        self.assertRedirects(response, reverse("landing_page"))
+
+    def test_logout_redirects_to_landing_page(self):
+        self.client.force_login(self.user)
+
+        response = self.client.get(reverse("main:logout"))
+
+        self.assertRedirects(response, reverse("landing_page"))

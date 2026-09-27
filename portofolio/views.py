@@ -28,4 +28,8 @@ COPY = {
 
 
 def landing_page(request, language="en"):
-    return render(request, "index.html", {"copy": COPY[language]})
+    context = {
+        "copy": COPY[language],
+        "last_login" : request.COOKIES.get('last_login', 'Belum ada sesi login / Cookie tidak ditemukan'),
+    }
+    return render(request, "index.html", context)
