@@ -266,10 +266,11 @@ def show_projects(request, language="en"):
         "copy": PROJECT_COPY[language],
         "project_list": projects,
         "title_query": title_query,
+        "is_editor": is_editor(request.user),
     }
     return render(request, "projects.html", context)
 
-@login_required
+@login_required(login_url="/login/")
 def create_project(request):
     if not request.user.is_superuser:
         raise PermissionDenied
@@ -291,7 +292,7 @@ def create_project(request):
     return render(request, "projects_form.html", context)
 
 
-@login_required
+@login_required(login_url="/login/")
 def update_project(request, project_id):
     if not request.user.is_superuser and not is_editor(request.user):
         raise PermissionDenied
@@ -314,7 +315,7 @@ def update_project(request, project_id):
     return render(request, "projects_form.html", context)
 
 
-@login_required
+@login_required(login_url="/login/")
 @require_POST
 def delete_project(request, project_id):
     if not request.user.is_superuser:
@@ -341,11 +342,12 @@ def show_experiences(request, language="en"):
     context = {
         "copy": EXPERIENCE_COPY[language],
         "experience_list": experiences,
+        "is_editor": is_editor(request.user),
     }
     return render(request, "experiences.html", context)
 
 
-@login_required
+@login_required(login_url="/login/")
 def create_experience(request):
     if not request.user.is_superuser:
         raise PermissionDenied
@@ -367,7 +369,7 @@ def create_experience(request):
     return render(request, "experiences_form.html", context)
 
 
-@login_required
+@login_required(login_url="/login/")
 def update_experience(request, experience_id):
     if not request.user.is_superuser and not is_editor(request.user):
         raise PermissionDenied
@@ -390,7 +392,7 @@ def update_experience(request, experience_id):
     return render(request, "experiences_form.html", context)
 
 
-@login_required
+@login_required(login_url="/login/")
 @require_POST
 def delete_experience(request, experience_id):
     if not request.user.is_superuser:
@@ -422,11 +424,12 @@ def show_achievements(request, language="en"):
     context = {
         "copy": ACHIEVEMENT_COPY[language],
         "achievement_list": achievements,
+        "is_editor": is_editor(request.user),
     }
     return render(request, "achievements.html", context)
 
 
-@login_required
+@login_required(login_url="/login/")
 def create_achievement(request):
     if not request.user.is_superuser:
         raise PermissionDenied
@@ -448,7 +451,7 @@ def create_achievement(request):
     return render(request, "achievements_form.html", context)
 
 
-@login_required
+@login_required(login_url="/login/")
 def update_achievement(request, achievement_id):
     if not request.user.is_superuser and not is_editor(request.user):
         raise PermissionDenied
@@ -471,7 +474,7 @@ def update_achievement(request, achievement_id):
     return render(request, "achievements_form.html", context)
 
 
-@login_required
+@login_required(login_url="/login/")
 @require_POST
 def delete_achievement(request, achievement_id):
     if not request.user.is_superuser:
