@@ -21,12 +21,20 @@ disimpan dalam model Django dan dirender melalui template HTML.
   - `/achievements/` dan `/id/achievements/`
 - Pengelolaan data Experience, Project, dan Achievement melalui `ModelForm`,
   lengkap dengan halaman create dan update serta modal konfirmasi delete.
+- Autentikasi pengguna melalui register, login, dan logout, termasuk session
+  Django, cookie `last_login`, serta status login pada navbar.
+- Authorization konsisten untuk Experience, Project, dan Achievement berdasarkan
+  empat peran: guest, user biasa, Editor, dan superuser.
+- Pengguna yang sudah login dapat memberi atau membatalkan star pada Experience,
+  Project, dan Achievement. Setiap relasi star disimpan melalui `ManyToManyField`.
 - Data Experience, Project, dan Achievement tersedia dalam format JSON melalui:
   - `/api/experiences/`
   - `/api/projects/`
   - `/api/achievements/`
 - Halaman daftar Experience, Project, dan Achievement menampilkan objek yang
   telah melalui proses serialisasi dan deserialisasi JSON.
+- Relasi pengguna pada respons JSON menggunakan natural foreign keys agar
+  direpresentasikan dengan username, bukan primary key internal.
 - Template memakai `base.html` sebagai root template bersama agar struktur
   navigasi, metadata, theme toggle, message, dan footer tidak diduplikasi.
 - Data portofolio dirender menggunakan Django Template Language, lengkap dengan
@@ -55,6 +63,7 @@ python -m venv .venv
 .\.venv\Scripts\Activate.ps1
 python -m pip install -r requirements.txt
 python manage.py migrate
+python manage.py createsuperuser
 python manage.py runserver
 ```
 
@@ -68,6 +77,33 @@ python manage.py check
 python manage.py test
 ```
 
+## Konfigurasi peran Editor
+
+Setelah migrasi dan pembuatan superuser, buka `/admin/`, lalu lakukan langkah
+berikut:
+
+1. Masuk menggunakan akun superuser.
+2. Buka **Authentication and Authorization > Groups**.
+3. Buat group bernama `Editor` dengan penulisan yang sama persis.
+4. Tambahkan akun yang akan menjadi editor ke group tersebut melalui halaman
+   **Users**.
+
+Hak akses aplikasi ditentukan oleh keanggotaan group `Editor` dan status
+`is_superuser`. Permission Django pada group dapat tetap disesuaikan melalui
+admin, tetapi pemeriksaan akses utama pada view mengikuti matriks berikut.
+
+| Peran | Membaca daftar | Star/unstar | Create | Update | Delete |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| Guest | Ya | Login | Login | Login | Login |
+| User biasa | Ya | Ya | 403 | 403 | 403 |
+| Editor | Ya | Ya | 403 | Ya | 403 |
+| Superuser | Ya | Ya | Ya | Ya | Ya |
+
+Halaman daftar tetap dapat dibaca tanpa login. Aksi yang membutuhkan autentikasi
+mengarahkan guest ke halaman login. User terautentikasi yang tidak mempunyai
+hak menerima respons HTTP 403. Endpoint star/unstar dan delete hanya menerima
+request POST serta dilindungi CSRF.
+
 ## Struktur proyek
 
 ```text
@@ -76,9 +112,9 @@ MaxPorto/
 │   ├── migrations/         # Migrasi skema dan seed data portofolio
 │   ├── forms.py            # ModelForm Project, Experience, dan Achievement
 │   ├── models.py           # Model Project, Experience, Skill, dan Achievement
-│   ├── tests.py            # Test model, view, template, route, dan seed data
-│   ├── urls.py             # Named URL halaman, CRUD, dan endpoint JSON
-│   └── views.py            # CRUD, data delivery, deserialisasi, dan context
+│   ├── tests.py            # Test model, auth, authorization, star, dan view
+│   ├── urls.py             # Named URL halaman, auth, CRUD, star, dan API JSON
+│   └── views.py            # Auth, authorization, CRUD, star, dan data delivery
 ├── portofolio/
 │   ├── settings.py         # Konfigurasi proyek Django
 │   ├── urls.py             # URL proyek dan homepage bilingual
@@ -87,7 +123,7 @@ MaxPorto/
 │   ├── css/style.css       # Tema, layout, responsivitas, dan komponen UI
 │   └── img/                # Foto dan ikon lokal
 ├── templates/
-│   ├── components/         # Komponen modal konfirmasi delete
+│   ├── components/         # Komponen modal delete dan tombol star
 │   ├── base.html           # Root template bersama
 │   ├── index.html          # Homepage dan hero
 │   ├── experiences.html    # Daftar Experience
@@ -97,7 +133,7 @@ MaxPorto/
 │   ├── skills.html         # Daftar Skill
 │   ├── achievements.html   # Daftar Achievement
 │   └── achievements_form.html
-├── docs/                   # Catatan arsitektur dan progres pengembangan
+├── ai-chat-history/        # Ekspor percakapan AI dengan redaksi otomatis
 ├── requirements.txt
 └── manage.py
 ```
@@ -261,6 +297,33 @@ mengubah objek tersebut menjadi representasi teks yang dapat dikirim melalui
 jaringan, dibaca oleh aplikasi lain, dan direkonstruksi kembali melalui proses
 deserialization.
 
+
+## Implementasi Tugas 4
+
+Tugas 4 menambahkan autentikasi, session, cookie, authorization, dan fitur star
+ke data portofolio. Register, login, dan logout menggunakan mekanisme autentikasi
+Django. Informasi pengguna tersimpan pada session, sedangkan cookie
+`last_login` mencatat waktu login terakhir dan dihapus saat logout.
+
+Authorization diterapkan sama pada Experience, Project, dan Achievement. Guest
+dapat membaca halaman publik, tetapi harus login sebelum menjalankan aksi.
+User biasa dapat memberi star, Editor juga dapat memperbarui data, sedangkan
+create dan delete hanya tersedia bagi superuser. Selain diperiksa pada template
+untuk mengatur visibilitas tombol, aturan tersebut diperiksa kembali pada view
+agar URL tidak dapat dipakai untuk melewati authorization.
+
+Fitur star menggunakan relasi many-to-many `starred_by` antara setiap jenis
+entri dan User. Endpoint toggle memakai POST dan CSRF; pengguna ditambahkan ke
+relasi jika belum memberi star dan dihapus jika sudah memberi star. Dengan
+relasi ini, satu pengguna hanya dapat memberi satu star pada entri yang sama.
+Serialization API memakai `use_natural_foreign_keys=True`, sehingga relasi User
+ditampilkan sebagai username.
+
+Test otomatis mencakup matriks akses keempat peran, visibilitas kontrol CRUD,
+redirect login, respons 403, penolakan metode GET pada endpoint mutatif,
+perlindungan CSRF, toggle star ketiga model, dan natural foreign keys. Seluruh
+91 test lulus pada verifikasi akhir Tugas 4.
+
 ## Progres pengembangan
 
 | Periode | Fokus | Hasil |
@@ -272,26 +335,30 @@ deserialization.
 | 7 September 2026 | Responsivitas dan dokumentasi | Menu mobile, prioritas foto hero pada mobile, serta dokumentasi proyek. |
 | 11–14 September 2026 | Implementasi MVT | Model, migrasi, seed data, halaman daftar bilingual, navigasi, dan test untuk data portofolio dinamis. |
 | 14–19 September 2026 | Form dan data delivery | Root template bersama, halaman Experience terpisah, ModelForm, create, update, delete, modal konfirmasi, endpoint JSON, deserialisasi data, serta test untuk Experience, Project, dan Achievement. |
+| 19–28 September 2026 | Authentication dan authorization | Register, login, logout, session, cookie, empat peran akses, star/unstar untuk Experience, Project, dan Achievement, natural foreign keys, serta test authorization dan star. |
 
 ## AI disclosure
 
 ### Cara AI digunakan
 
 Saya menggunakan Hermes Agent sebagai asisten pengembangan lokal. AI membantu
-menjelaskan pola MVT, menyarankan struktur model dan route, menyiapkan perubahan
-kode dan test, serta menjalankan pemeriksaan teknis seperti python manage.py
-check dan python manage.py test. Pengembangan dilakukan secara bertahap:
+menjelaskan pola MVT, autentikasi, session, cookie, authorization, dan relasi
+many-to-many; menyarankan struktur model dan route; menyiapkan perubahan kode
+dan test; serta menjalankan pemeriksaan teknis seperti `python manage.py check`
+dan `python manage.py test`. Pengembangan dilakukan secara bertahap:
 setiap bagian diimplementasikan dan diuji secara terpisah, kemudian hasilnya
 saya tinjau sebelum di-commit. Keputusan fitur, pemilihan konten, aset gambar,
 dan perubahan akhir tetap berada pada saya sebagai pemilik proyek.
 
 ### Chat history
 
-Riwayat percakapan yang tersimpan selama pengembangan Tugas 2 dan Tugas 3
-tersedia di folder [`docs/ai-chat-history/`](docs/ai-chat-history/). Riwayat
+Riwayat percakapan yang tersimpan selama pengembangan Tugas 2 sampai Tugas 4
+tersedia di folder [`ai-chat-history/`](ai-chat-history/). Riwayat
 Tugas 3 diekspor dari sesi Hermes Agent ke
-[`20260919_072342_16904e-activate-.venv-in-powershell-2.md`](docs/ai-chat-history/20260919_072342_16904e-activate-.venv-in-powershell-2.md)
-dengan redaksi otomatis untuk informasi sensitif.
+[`20260919_072342_16904e-activate-.venv-in-powershell-2.md`](ai-chat-history/20260919_072342_16904e-activate-.venv-in-powershell-2.md)
+dengan redaksi otomatis untuk informasi sensitif. Bagian pengembangan Tugas 4
+tersedia pada
+[`20260928_tugas-4-development.md`](ai-chat-history/20260928_tugas-4-development.md).
 
 ### Keterbatasan AI
 
