@@ -194,6 +194,9 @@ ACHIEVEMENT_COPY = {
     },
 }
 
+def is_editor(user):
+    return user.is_authenticated and user.groups.filter(name="Editor").exists()
+
 def register(request):
     form = UserCreationForm(request.POST or None)
 
@@ -230,14 +233,14 @@ def logout_user(request):
     return response
 
 @login_required(login_url="/login/")
+@require_POST
 def toggle_star(request, project_id):
     project = get_object_or_404(Project, pk=project_id)
 
-    if request.method == "POST":
-        if request.user in project.starred_by.all():
-            project.starred_by.remove(request.user)
-        else:
-            project.starred_by.add(request.user)
+    if request.user in project.starred_by.all():
+        project.starred_by.remove(request.user)
+    else:
+        project.starred_by.add(request.user)
 
     return redirect("main:show_projects")
 
@@ -266,7 +269,7 @@ def show_projects(request, language="en"):
     }
     return render(request, "projects.html", context)
 
-@login_required(login_url="/login/")
+@login_required
 def create_project(request):
     if not request.user.is_superuser:
         raise PermissionDenied
@@ -288,7 +291,10 @@ def create_project(request):
     return render(request, "projects_form.html", context)
 
 
+@login_required
 def update_project(request, project_id):
+    if not request.user.is_superuser and not is_editor(request.user):
+        raise PermissionDenied
     project = get_object_or_404(Project, pk=project_id)
     form = ProjectForm(request.POST or None, instance=project)
     if request.method == "POST" and form.is_valid():
@@ -308,8 +314,11 @@ def update_project(request, project_id):
     return render(request, "projects_form.html", context)
 
 
+@login_required
 @require_POST
 def delete_project(request, project_id):
+    if not request.user.is_superuser:
+        raise PermissionDenied
     project = get_object_or_404(Project, pk=project_id)
     project.delete()
     messages.success(request, "Proyek berhasil dihapus!")
@@ -336,7 +345,10 @@ def show_experiences(request, language="en"):
     return render(request, "experiences.html", context)
 
 
+@login_required
 def create_experience(request):
+    if not request.user.is_superuser:
+        raise PermissionDenied
     form = ExperienceForm(request.POST or None)
     if request.method == "POST" and form.is_valid():
         form.save()
@@ -355,7 +367,10 @@ def create_experience(request):
     return render(request, "experiences_form.html", context)
 
 
+@login_required
 def update_experience(request, experience_id):
+    if not request.user.is_superuser and not is_editor(request.user):
+        raise PermissionDenied
     experience = get_object_or_404(Experience, pk=experience_id)
     form = ExperienceForm(request.POST or None, instance=experience)
     if request.method == "POST" and form.is_valid():
@@ -375,8 +390,11 @@ def update_experience(request, experience_id):
     return render(request, "experiences_form.html", context)
 
 
+@login_required
 @require_POST
 def delete_experience(request, experience_id):
+    if not request.user.is_superuser:
+        raise PermissionDenied
     experience = get_object_or_404(Experience, pk=experience_id)
     experience.delete()
     messages.success(request, "Pengalaman berhasil dihapus!")
@@ -408,7 +426,10 @@ def show_achievements(request, language="en"):
     return render(request, "achievements.html", context)
 
 
+@login_required
 def create_achievement(request):
+    if not request.user.is_superuser:
+        raise PermissionDenied
     form = AchievementForm(request.POST or None)
     if request.method == "POST" and form.is_valid():
         form.save()
@@ -427,7 +448,10 @@ def create_achievement(request):
     return render(request, "achievements_form.html", context)
 
 
+@login_required
 def update_achievement(request, achievement_id):
+    if not request.user.is_superuser and not is_editor(request.user):
+        raise PermissionDenied
     achievement = get_object_or_404(Achievement, pk=achievement_id)
     form = AchievementForm(request.POST or None, instance=achievement)
     if request.method == "POST" and form.is_valid():
@@ -447,8 +471,11 @@ def update_achievement(request, achievement_id):
     return render(request, "achievements_form.html", context)
 
 
+@login_required
 @require_POST
 def delete_achievement(request, achievement_id):
+    if not request.user.is_superuser:
+        raise PermissionDenied
     achievement = get_object_or_404(Achievement, pk=achievement_id)
     achievement.delete()
     messages.success(request, "Prestasi berhasil dihapus!")

@@ -20,10 +20,12 @@
             <h1>{{ copy.page_title }}</h1>
             <p class="projects-intro">{{ copy.intro }}</p>
           </div>
-          <a class="button project-add-button" href="{% url 'main:create_achievement' %}">
-            <span aria-hidden="true">+</span>
-            {{ copy.add_achievement }}
-          </a>
+          {% if user.is_superuser %}
+            <a class="button project-add-button" href="{% url 'main:create_achievement' %}">
+              <span aria-hidden="true">+</span>
+              {{ copy.add_achievement }}
+            </a>
+          {% endif %}
         </div>
         <div class="achievement-grid">
           {% for achievement in achievement_list %}
@@ -42,10 +44,14 @@
                 <p>{{ achievement.result }}</p>
               {% endif %}
               <div class="project-card-actions">
-                <a class="project-link" href="{% url 'main:update_achievement' achievement.pk %}">
-                  {{ copy.edit_achievement }}
-                </a>
-                {% include "components/entry_delete_modal.html" with item=achievement modal_prefix="delete-achievement" delete_url_name="main:delete_achievement" delete_label=copy.delete_achievement delete_title=copy.delete_title delete_prompt=copy.delete_prompt cancel=copy.cancel confirm_delete=copy.confirm_delete %}
+                {% if user.is_superuser or is_editor %}
+                  <a class="project-link" href="{% url 'main:update_achievement' achievement.pk %}">
+                    {{ copy.edit_achievement }}
+                  </a>
+                {% endif %}
+                {% if user.is_superuser %}
+                  {% include "components/entry_delete_modal.html" with item=achievement modal_prefix="delete-achievement" delete_url_name="main:delete_achievement" delete_label=copy.delete_achievement delete_title=copy.delete_title delete_prompt=copy.delete_prompt cancel=copy.cancel confirm_delete=copy.confirm_delete %}
+                {% endif %}
               </div>
             </article>
           {% empty %}

@@ -20,10 +20,12 @@
         <h1>{{ copy.page_title }}</h1>
         <p class="projects-intro">{{ copy.intro }}</p>
       </div>
-      <a class="button project-add-button" href="{% url 'main:create_experience' %}">
-        <span aria-hidden="true">+</span>
-        {{ copy.add_experience }}
-      </a>
+      {% if user.is_superuser %}
+        <a class="button project-add-button" href="{% url 'main:create_experience' %}">
+          <span aria-hidden="true">+</span>
+          {{ copy.add_experience }}
+        </a>
+      {% endif %}
     </div>
     <div class="experience-grid">
       {% for experience in experience_list %}
@@ -44,10 +46,14 @@
             <p>{{ experience.description }}</p>
           {% endif %}
           <div class="project-card-actions">
-            <a class="project-link" href="{% url 'main:update_experience' experience.pk %}">
-              {{ copy.edit_experience }}
-            </a>
-            {% include "components/entry_delete_modal.html" with item=experience modal_prefix="delete-experience" delete_url_name="main:delete_experience" delete_label=copy.delete_experience delete_title=copy.delete_title delete_prompt=copy.delete_prompt cancel=copy.cancel confirm_delete=copy.confirm_delete %}
+            {% if user.is_superuser or is_editor %}
+              <a class="project-link" href="{% url 'main:update_experience' experience.pk %}">
+                {{ copy.edit_experience }}
+              </a>
+            {% endif %}
+            {% if user.is_superuser %}
+              {% include "components/entry_delete_modal.html" with item=experience modal_prefix="delete-experience" delete_url_name="main:delete_experience" delete_label=copy.delete_experience delete_title=copy.delete_title delete_prompt=copy.delete_prompt cancel=copy.cancel confirm_delete=copy.confirm_delete %}
+            {% endif %}
           </div>
         </article>
       {% empty %}

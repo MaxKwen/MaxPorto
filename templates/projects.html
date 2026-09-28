@@ -68,11 +68,13 @@
                     {{ copy.view_project }} <span aria-hidden="true">↗</span>
                   </a>
                 {% endif %}
-                {% if user.is_superuser %}
+                {% if user.is_superuser or is_editor %}
                   <a class="project-link" href="{% url 'main:update_project' project.pk %}">
                     {{ copy.edit_project }}
                   </a>
-                {% include "components/project_delete_modal.html" with project=project %}
+                {% endif %}
+                {% if user.is_superuser %}
+                  {% include "components/project_delete_modal.html" with project=project %}
                 {% endif %}
                 {% include "components/project_star.html" with project=project %}
               </div>
