@@ -2,18 +2,11 @@ import os
 import sys
 import django
 from dotenv import load_dotenv
-from selenium import webdriver
-from selenium.webdriver.common.by import By
-from selenium.webdriver.support.ui import WebDriverWait
-from selenium.webdriver.support import expected_conditions as EC
 
 load_dotenv()
 
 USER_PASSWORD = os.getenv("E2E_USER_PASSWORD")
 ADMIN_PASSWORD = os.getenv("E2E_ADMIN_PASSWORD")
-
-if not USER_PASSWORD or not ADMIN_PASSWORD:
-    sys.exit("E2E_USER_PASSWORD dan E2E_ADMIN_PASSWORD belum diisi di berkas .env.")
 
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "portofolio.settings")
 django.setup()
@@ -35,6 +28,16 @@ def setup_users():
 
 
 def main():
+    if not USER_PASSWORD or not ADMIN_PASSWORD:
+        sys.exit(
+            "E2E_USER_PASSWORD dan ADMIN_PASSWORD belum diisi di berkas .env."
+        )
+
+    from selenium import webdriver
+    from selenium.webdriver.common.by import By
+    from selenium.webdriver.support import expected_conditions as EC
+    from selenium.webdriver.support.ui import WebDriverWait
+
     setup_users()
 
     options = webdriver.ChromeOptions()

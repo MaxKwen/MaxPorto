@@ -4,15 +4,28 @@ from unittest.mock import patch
 
 from django.conf import settings
 from django.contrib.auth import get_user_model
+from django.contrib.auth.models import Group
 from django.core import serializers
 from django.http import HttpResponse
-from django.test import TestCase
+from django.test import Client, TestCase
 from django.urls import reverse
 
 from main.models import Achievement, Experience, Project, Skill
 
 
-class ProjectPageTest(TestCase):
+class SuperuserClientMixin:
+    def login_superuser(self):
+        self.owner = get_user_model().objects.create_superuser(
+            username="portfolio-owner",
+            password="owner-password-123",
+        )
+        self.client.force_login(self.owner)
+
+
+class ProjectPageTest(SuperuserClientMixin, TestCase):
+    def setUp(self):
+        self.login_superuser()
+
     def test_project_page_css_allows_content_to_scroll(self):
         css = (settings.BASE_DIR / "static" / "css" / "style.css").read_text()
         desktop_rule = css.split("@media (min-width: 1001px)", 1)[1].split(
@@ -288,7 +301,10 @@ class AchievementFormTest(TestCase):
         self.assertEqual(achievement.display_order, 1)
 
 
-class ExperienceCreateViewTest(TestCase):
+class ExperienceCreateViewTest(SuperuserClientMixin, TestCase):
+    def setUp(self):
+        self.login_superuser()
+
     def test_create_experience_page_displays_experience_form(self):
         experience_form_class = getattr(import_module("main.forms"), "ExperienceForm")
 
@@ -331,7 +347,10 @@ class ExperienceCreateViewTest(TestCase):
         self.assertContains(response, "Add Experience")
 
 
-class AchievementCreateViewTest(TestCase):
+class AchievementCreateViewTest(SuperuserClientMixin, TestCase):
+    def setUp(self):
+        self.login_superuser()
+
     def test_create_achievement_page_displays_achievement_form(self):
         achievement_form_class = getattr(
             import_module("main.forms"),
@@ -375,8 +394,9 @@ class AchievementCreateViewTest(TestCase):
         self.assertContains(response, "Add Achievement")
 
 
-class ExperienceUpdateViewTest(TestCase):
+class ExperienceUpdateViewTest(SuperuserClientMixin, TestCase):
     def setUp(self):
+        self.login_superuser()
         self.experience = Experience.objects.create(
             title="Original Role",
             title_id="Peran Awal",
@@ -452,8 +472,9 @@ class ExperienceUpdateViewTest(TestCase):
         self.assertIn("text-decoration: none", edit_button_rule)
 
 
-class AchievementUpdateViewTest(TestCase):
+class AchievementUpdateViewTest(SuperuserClientMixin, TestCase):
     def setUp(self):
+        self.login_superuser()
         self.achievement = Achievement.objects.create(
             title="Original Achievement",
             title_id="Prestasi Awal",
@@ -523,8 +544,9 @@ class AchievementUpdateViewTest(TestCase):
         self.assertIn("flex-direction: column", achievement_rule)
 
 
-class ExperienceDeleteViewTest(TestCase):
+class ExperienceDeleteViewTest(SuperuserClientMixin, TestCase):
     def setUp(self):
+        self.login_superuser()
         self.experience = Experience.objects.create(
             title="Experience to Delete",
             organization="University of Indonesia",
@@ -560,8 +582,9 @@ class ExperienceDeleteViewTest(TestCase):
         self.assertContains(response, "Delete Experience")
 
 
-class AchievementDeleteViewTest(TestCase):
+class AchievementDeleteViewTest(SuperuserClientMixin, TestCase):
     def setUp(self):
+        self.login_superuser()
         self.achievement = Achievement.objects.create(
             title="Achievement to Delete",
             result="Temporary result",
@@ -597,7 +620,10 @@ class AchievementDeleteViewTest(TestCase):
         self.assertContains(response, "Delete Achievement")
 
 
-class ProjectCreateViewTest(TestCase):
+class ProjectCreateViewTest(SuperuserClientMixin, TestCase):
+    def setUp(self):
+        self.login_superuser()
+
     def test_create_project_page_displays_project_form(self):
         project_form_class = getattr(import_module("main.forms"), "ProjectForm")
 
@@ -642,8 +668,9 @@ class ProjectCreateViewTest(TestCase):
         self.assertContains(response, "Proyek baru berhasil ditambahkan!")
 
 
-class ProjectUpdateViewTest(TestCase):
+class ProjectUpdateViewTest(SuperuserClientMixin, TestCase):
     def setUp(self):
+        self.login_superuser()
         self.project = Project.objects.create(
             title="Original Project",
             description="Original description.",
@@ -841,7 +868,10 @@ class AchievementDataDeliveryTest(TestCase):
         self.assertContains(response, achievement.result)
 
 
-class ProjectDeleteViewTest(TestCase):
+class ProjectDeleteViewTest(SuperuserClientMixin, TestCase):
+    def setUp(self):
+        self.login_superuser()
+
     def test_delete_project_removes_project_and_redirects(self):
         project = Project.objects.create(
             title="Disposable Prototype",
@@ -1247,3 +1277,279 @@ class AuthenticationViewTest(TestCase):
         response = self.client.get(reverse("main:logout"))
 
         self.assertRedirects(response, reverse("landing_page"))
+
+
+class PortfolioAuthorizationTest(TestCase):
+    def setUp(self):
+        user_model = get_user_model()
+        self.regular_user = user_model.objects.create_user(
+            username="regular-user",
+            password="regular-password-123",
+        )
+        self.editor = user_model.objects.create_user(
+            username="portfolio-editor",
+            password="editor-password-123",
+        )
+        editor_group = Group.objects.create(name="Editor")
+        self.editor.groups.add(editor_group)
+        self.owner = user_model.objects.create_superuser(
+            username="portfolio-owner",
+            password="owner-password-123",
+        )
+
+        project = Project.objects.create(
+            title="Authorization Project",
+            description="Project used to verify authorization.",
+            category="Backend",
+        )
+        experience = Experience.objects.create(
+            title="Authorization Experience",
+            organization="University of Indonesia",
+            description="Experience used to verify authorization.",
+            category="Teaching",
+            start_year=2026,
+        )
+        achievement = Achievement.objects.create(
+            title="Authorization Achievement",
+            result="Finalist",
+            category="Competition",
+            year=2026,
+            display_order=20,
+        )
+
+        self.sections = [
+            {
+                "page": reverse("main:show_projects"),
+                "create": reverse("main:create_project"),
+                "update": reverse("main:update_project", args=[project.pk]),
+                "delete": reverse("main:delete_project", args=[project.pk]),
+                "star": reverse("main:toggle_star", args=[project.pk]),
+                "model": Project,
+                "pk": project.pk,
+            },
+            {
+                "page": reverse("main:show_experiences"),
+                "create": reverse("main:create_experience"),
+                "update": reverse(
+                    "main:update_experience", args=[experience.pk]
+                ),
+                "delete": reverse(
+                    "main:delete_experience", args=[experience.pk]
+                ),
+                "star": reverse(
+                    "main:toggle_experience_star", args=[experience.pk]
+                ),
+                "model": Experience,
+                "pk": experience.pk,
+            },
+            {
+                "page": reverse("main:show_achievements"),
+                "create": reverse("main:create_achievement"),
+                "update": reverse(
+                    "main:update_achievement", args=[achievement.pk]
+                ),
+                "delete": reverse(
+                    "main:delete_achievement", args=[achievement.pk]
+                ),
+                "star": reverse(
+                    "main:toggle_achievement_star", args=[achievement.pk]
+                ),
+                "model": Achievement,
+                "pk": achievement.pk,
+            },
+        ]
+
+    def test_guest_is_redirected_to_login_for_mutating_actions(self):
+        for section in self.sections:
+            for action in ("create", "update"):
+                with self.subTest(section=section["page"], action=action):
+                    response = self.client.get(section[action])
+                    self.assertEqual(response.status_code, 302)
+                    self.assertEqual(
+                        response.url,
+                        f"{reverse('main:login')}?next={section[action]}",
+                    )
+
+            with self.subTest(section=section["page"], action="delete"):
+                response = self.client.post(section["delete"])
+                self.assertEqual(response.status_code, 302)
+                self.assertEqual(
+                    response.url,
+                    f"{reverse('main:login')}?next={section['delete']}",
+                )
+
+    def test_regular_user_cannot_create_update_or_delete(self):
+        self.client.force_login(self.regular_user)
+
+        for section in self.sections:
+            for action in ("create", "update"):
+                with self.subTest(section=section["page"], action=action):
+                    self.assertEqual(
+                        self.client.get(section[action]).status_code,
+                        403,
+                    )
+
+            with self.subTest(section=section["page"], action="delete"):
+                self.assertEqual(
+                    self.client.post(section["delete"]).status_code,
+                    403,
+                )
+                self.assertTrue(
+                    section["model"].objects.filter(pk=section["pk"]).exists()
+                )
+
+    def test_editor_can_update_but_cannot_create_or_delete(self):
+        self.client.force_login(self.editor)
+
+        for section in self.sections:
+            with self.subTest(section=section["page"], action="create"):
+                self.assertEqual(self.client.get(section["create"]).status_code, 403)
+
+            with self.subTest(section=section["page"], action="update"):
+                self.assertEqual(self.client.get(section["update"]).status_code, 200)
+
+            with self.subTest(section=section["page"], action="delete"):
+                self.assertEqual(
+                    self.client.post(section["delete"]).status_code,
+                    403,
+                )
+                self.assertTrue(
+                    section["model"].objects.filter(pk=section["pk"]).exists()
+                )
+
+    def test_action_controls_follow_the_current_user_role(self):
+        role_expectations = [
+            (None, False, False, False),
+            (self.regular_user, False, False, False),
+            (self.editor, False, True, False),
+            (self.owner, True, True, True),
+        ]
+
+        for user, can_create, can_update, can_delete in role_expectations:
+            self.client.logout()
+            if user is not None:
+                self.client.force_login(user)
+
+            for section in self.sections:
+                with self.subTest(user=user, section=section["page"]):
+                    response = self.client.get(section["page"])
+                    if can_create:
+                        self.assertContains(response, f'href="{section["create"]}"')
+                    else:
+                        self.assertNotContains(response, f'href="{section["create"]}"')
+
+                    if can_update:
+                        self.assertContains(response, f'href="{section["update"]}"')
+                    else:
+                        self.assertNotContains(response, f'href="{section["update"]}"')
+
+                    if can_delete:
+                        self.assertContains(response, f'action="{section["delete"]}"')
+                    else:
+                        self.assertNotContains(response, f'action="{section["delete"]}"')
+
+                    self.assertContains(response, f'action="{section["star"]}"')
+
+
+class PortfolioStarTest(TestCase):
+    def setUp(self):
+        self.user = get_user_model().objects.create_user(
+            username="star-user",
+            password="star-password-123",
+        )
+        project = Project.objects.create(
+            title="Star Project",
+            description="Project with stars.",
+            category="Backend",
+        )
+        experience = Experience.objects.create(
+            title="Star Experience",
+            organization="University of Indonesia",
+            description="Experience with stars.",
+            category="Teaching",
+            start_year=2026,
+        )
+        achievement = Achievement.objects.create(
+            title="Star Achievement",
+            result="Finalist",
+            category="Competition",
+            year=2026,
+            display_order=20,
+        )
+        self.targets = [
+            (
+                project,
+                reverse("main:toggle_star", args=[project.pk]),
+                reverse("main:show_projects"),
+                reverse("main:get_projects_json"),
+            ),
+            (
+                experience,
+                reverse("main:toggle_experience_star", args=[experience.pk]),
+                reverse("main:show_experiences"),
+                reverse("main:get_experiences_json"),
+            ),
+            (
+                achievement,
+                reverse("main:toggle_achievement_star", args=[achievement.pk]),
+                reverse("main:show_achievements"),
+                reverse("main:get_achievements_json"),
+            ),
+        ]
+
+    def test_guest_must_login_before_starring(self):
+        for item, star_url, _, _ in self.targets:
+            with self.subTest(model=item._meta.label):
+                response = self.client.post(star_url)
+                self.assertEqual(response.status_code, 302)
+                self.assertEqual(
+                    response.url,
+                    f"{reverse('main:login')}?next={star_url}",
+                )
+                self.assertFalse(item.starred_by.filter(pk=self.user.pk).exists())
+
+    def test_authenticated_user_can_star_and_unstar_once(self):
+        self.client.force_login(self.user)
+
+        for item, star_url, page_url, _ in self.targets:
+            with self.subTest(model=item._meta.label):
+                response = self.client.post(star_url)
+                self.assertRedirects(response, page_url)
+                self.assertEqual(item.starred_by.filter(pk=self.user.pk).count(), 1)
+
+                response = self.client.post(star_url)
+                self.assertRedirects(response, page_url)
+                self.assertFalse(item.starred_by.filter(pk=self.user.pk).exists())
+
+    def test_star_endpoints_reject_get_requests(self):
+        self.client.force_login(self.user)
+
+        for item, star_url, _, _ in self.targets:
+            with self.subTest(model=item._meta.label):
+                self.assertEqual(self.client.get(star_url).status_code, 405)
+
+    def test_star_forms_include_csrf_protection(self):
+        csrf_client = Client(enforce_csrf_checks=True)
+        csrf_client.force_login(self.user)
+
+        for item, star_url, page_url, _ in self.targets:
+            with self.subTest(model=item._meta.label):
+                page_response = csrf_client.get(page_url)
+                self.assertContains(page_response, f'action="{star_url}"')
+                self.assertContains(page_response, "csrfmiddlewaretoken")
+                self.assertEqual(csrf_client.post(star_url).status_code, 403)
+                self.assertFalse(item.starred_by.filter(pk=self.user.pk).exists())
+
+    def test_json_endpoints_use_username_for_star_relations(self):
+        for item, _, _, json_url in self.targets:
+            with self.subTest(model=item._meta.label):
+                item.starred_by.add(self.user)
+                response = self.client.get(json_url)
+                payload = json.loads(response.content)
+                serialized_item = next(
+                    entry for entry in payload if entry["pk"] == item.pk
+                )
+                self.assertEqual(
+                    serialized_item["fields"]["starred_by"],
+                    [[self.user.username]],
+                )
