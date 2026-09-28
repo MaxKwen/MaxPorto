@@ -67,6 +67,9 @@ class Achievement(models.Model):
     category = models.CharField(max_length=100)
     year = models.PositiveSmallIntegerField(null=True, blank=True)
     display_order = models.PositiveSmallIntegerField(default=0)
+    starred_by = models.ManyToManyField(
+        User, related_name="starred_achievements", blank=True
+    )
 
     class Meta:
         ordering = ("display_order", "title")

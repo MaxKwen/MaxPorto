@@ -14,6 +14,7 @@ from main.views import (
     show_experiences,
     show_projects,
     show_skills,
+    toggle_achievement_star,
     toggle_experience_star,
     update_achievement,
     update_experience,
@@ -21,7 +22,7 @@ from main.views import (
     register,
     login_user,
     logout_user,
-    toggle_star,
+    toggle_project_star,
 )
 
 app_name = "main"
@@ -78,6 +79,11 @@ urlpatterns = [
         name="delete_achievement",
     ),
     path(
+        "achievements/<int:achievement_id>/star/",
+        toggle_achievement_star,
+        name="toggle_achievement_star",
+    ),
+    path(
         "id/achievements/",
         show_achievements,
         {"language": "id"},
@@ -113,7 +119,7 @@ urlpatterns = [
     path("logout/", logout_user, name="logout"),
     path(
         "projects/<int:project_id>/star/",
-        toggle_star,
+        toggle_project_star,
         name="toggle_star",
     ),
 ]

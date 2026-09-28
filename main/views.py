@@ -178,6 +178,10 @@ ACHIEVEMENT_COPY = {
         "delete_prompt": "Are you sure you want to delete",
         "cancel": "Cancel",
         "confirm_delete": "Yes, delete",
+        "star": "Star",
+        "unstar": "Unstar",
+        "starred_by": "Starred by",
+        "first_star": "Be the first to star this achievement",
         "empty_state": "No achievements have been added yet.",
     },
     "id": {
@@ -198,6 +202,10 @@ ACHIEVEMENT_COPY = {
         "delete_prompt": "Apakah kamu yakin ingin menghapus",
         "cancel": "Batal",
         "confirm_delete": "Ya, hapus",
+        "star": "Beri Star",
+        "unstar": "Batalkan Star",
+        "starred_by": "Diberi star oleh",
+        "first_star": "Jadilah yang pertama memberi star pada prestasi ini",
         "empty_state": "Belum ada prestasi yang ditambahkan.",
     },
 }
@@ -242,7 +250,7 @@ def logout_user(request):
 
 @login_required(login_url="/login/")
 @require_POST
-def toggle_star(request, project_id):
+def toggle_project_star(request, project_id):
     project = get_object_or_404(Project, pk=project_id)
 
     if request.user in project.starred_by.all():
@@ -433,7 +441,9 @@ def show_skills(request, language="en"):
 
 def get_achievements_json(request):
     achievements = Achievement.objects.all()
-    achievements_json = serializers.serialize("json", achievements)
+    achievements_json = serializers.serialize(
+        "json", achievements, use_natural_foreign_keys=True
+    )
     return HttpResponse(achievements_json, content_type="application/json")
 
 
@@ -450,6 +460,19 @@ def show_achievements(request, language="en"):
         "is_editor": is_editor(request.user),
     }
     return render(request, "achievements.html", context)
+
+
+@login_required(login_url="/login/")
+@require_POST
+def toggle_achievement_star(request, achievement_id):
+    achievement = get_object_or_404(Achievement, pk=achievement_id)
+
+    if request.user in achievement.starred_by.all():
+        achievement.starred_by.remove(request.user)
+    else:
+        achievement.starred_by.add(request.user)
+
+    return redirect("main:show_achievements")
 
 
 @login_required(login_url="/login/")

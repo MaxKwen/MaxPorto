@@ -52,6 +52,7 @@
                 {% if user.is_superuser %}
                   {% include "components/entry_delete_modal.html" with item=achievement modal_prefix="delete-achievement" delete_url_name="main:delete_achievement" delete_label=copy.delete_achievement delete_title=copy.delete_title delete_prompt=copy.delete_prompt cancel=copy.cancel confirm_delete=copy.confirm_delete %}
                 {% endif %}
+                {% include "components/entry_star.html" with item=achievement toggle_url_name="main:toggle_achievement_star" %}
               </div>
             </article>
           {% empty %}
