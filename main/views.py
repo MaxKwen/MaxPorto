@@ -86,6 +86,10 @@ EXPERIENCE_COPY = {
         "delete_prompt": "Are you sure you want to delete",
         "cancel": "Cancel",
         "confirm_delete": "Yes, delete",
+        "star": "Star",
+        "unstar": "Unstar",
+        "starred_by": "Starred by",
+        "first_star": "Be the first to star this experience",
         "present": "present",
         "empty_state": "No experience has been added yet.",
     },
@@ -107,6 +111,10 @@ EXPERIENCE_COPY = {
         "delete_prompt": "Apakah kamu yakin ingin menghapus",
         "cancel": "Batal",
         "confirm_delete": "Ya, hapus",
+        "star": "Beri Star",
+        "unstar": "Batalkan Star",
+        "starred_by": "Diberi star oleh",
+        "first_star": "Jadilah yang pertama memberi star pada pengalaman ini",
         "present": "sekarang",
         "empty_state": "Belum ada pengalaman yang ditambahkan.",
     },
@@ -328,7 +336,9 @@ def delete_project(request, project_id):
 
 def get_experiences_json(request):
     experiences = Experience.objects.order_by("-start_year", "id")
-    experiences_json = serializers.serialize("json", experiences)
+    experiences_json = serializers.serialize(
+        "json", experiences, use_natural_foreign_keys=True
+    )
     return HttpResponse(experiences_json, content_type="application/json")
 
 
@@ -345,6 +355,19 @@ def show_experiences(request, language="en"):
         "is_editor": is_editor(request.user),
     }
     return render(request, "experiences.html", context)
+
+
+@login_required(login_url="/login/")
+@require_POST
+def toggle_experience_star(request, experience_id):
+    experience = get_object_or_404(Experience, pk=experience_id)
+
+    if request.user in experience.starred_by.all():
+        experience.starred_by.remove(request.user)
+    else:
+        experience.starred_by.add(request.user)
+
+    return redirect("main:show_experiences")
 
 
 @login_required(login_url="/login/")

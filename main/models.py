@@ -31,6 +31,9 @@ class Experience(models.Model):
     category = models.CharField(max_length=100)
     start_year = models.PositiveSmallIntegerField()
     end_year = models.PositiveSmallIntegerField(null=True, blank=True)
+    starred_by = models.ManyToManyField(
+        User, related_name="starred_experiences", blank=True
+    )
 
     class Meta:
         db_table = "main_portfolio_experience"

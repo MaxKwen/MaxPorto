@@ -54,6 +54,7 @@
             {% if user.is_superuser %}
               {% include "components/entry_delete_modal.html" with item=experience modal_prefix="delete-experience" delete_url_name="main:delete_experience" delete_label=copy.delete_experience delete_title=copy.delete_title delete_prompt=copy.delete_prompt cancel=copy.cancel confirm_delete=copy.confirm_delete %}
             {% endif %}
+            {% include "components/entry_star.html" with item=experience toggle_url_name="main:toggle_experience_star" %}
           </div>
         </article>
       {% empty %}
