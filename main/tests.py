@@ -42,35 +42,27 @@ class ProjectPageTest(SuperuserClientMixin, TestCase):
         self.assertTemplateUsed(response, "projects.html")
         self.assertTemplateUsed(response, "base.html")
 
-    def test_project_page_links_to_create_project_form(self):
+    def test_project_page_has_add_project_popover_button(self):
         response = self.client.get(reverse("main:show_projects"))
 
-        self.assertContains(
-            response,
-            f'href="{reverse("main:create_project")}"',
-        )
+        self.assertContains(response, 'class="button project-add-button"')
+        self.assertContains(response, 'popovertarget="add-project-modal"')
         self.assertContains(response, "Add Project")
 
-    def test_project_page_filters_projects_by_title(self):
-        matching_project = Project.objects.create(
-            title="Searchable Observatory",
-            description="The project that should be shown.",
-            category="Backend",
-        )
-        hidden_project = Project.objects.create(
-            title="Hidden Greenhouse",
-            description="The project that should be filtered out.",
-            category="IoT",
-        )
-
+    def test_project_page_renders_ajax_search_scaffold(self):
         response = self.client.get(
             reverse("main:show_projects"),
             {"title": "observatory"},
         )
 
-        self.assertContains(response, matching_project.title)
-        self.assertNotContains(response, hidden_project.title)
+        self.assertContains(response, 'id="project-search-form"')
+        self.assertContains(response, 'id="search-input"')
+        self.assertContains(response, 'id="loading"')
+        self.assertContains(response, 'id="error"')
+        self.assertContains(response, 'id="empty"')
+        self.assertContains(response, 'id="grid"')
         self.assertContains(response, 'value="observatory"')
+        self.assertContains(response, reverse("main:get_projects_json"))
 
     def test_homepage_links_to_project_page(self):
         response = self.client.get(reverse("landing_page"))
@@ -88,7 +80,7 @@ class ProjectPageTest(SuperuserClientMixin, TestCase):
 
         self.assertNotContains(response, 'class="project-card"')
 
-    def test_project_data_appears_on_page(self):
+    def test_project_data_is_available_to_the_ajax_page(self):
         project = Project.objects.create(
             title="STUMO Wristband",
             description="Wearable untuk pemantauan kesehatan siswa.",
@@ -98,14 +90,18 @@ class ProjectPageTest(SuperuserClientMixin, TestCase):
             is_featured=True,
         )
 
-        response = self.client.get(reverse("main:show_projects"))
+        response = self.client.get(reverse("main:get_projects_json"))
+        serialized_project = next(
+            item for item in response.json() if item["pk"] == project.pk
+        )
+        fields = serialized_project["fields"]
 
-        self.assertContains(response, project.title)
-        self.assertContains(response, project.description)
-        self.assertContains(response, project.category)
-        self.assertContains(response, project.project_url)
-        self.assertContains(response, project.thumbnail)
-        self.assertContains(response, "Featured project")
+        self.assertEqual(fields["title"], project.title)
+        self.assertEqual(fields["description"], project.description)
+        self.assertEqual(fields["category"], project.category)
+        self.assertEqual(fields["project_url"], project.project_url)
+        self.assertEqual(fields["thumbnail"], project.thumbnail)
+        self.assertTrue(fields["is_featured"])
 
     def test_project_page_shows_empty_state_without_data(self):
         Project.objects.all().delete()
@@ -123,11 +119,18 @@ class ProjectPageTest(SuperuserClientMixin, TestCase):
         )
 
         response = self.client.get(reverse("main:show_projects_id"))
+        api_response = self.client.get(reverse("main:get_projects_json"))
+        serialized_project = next(
+            item for item in api_response.json() if item["pk"] == project.pk
+        )
 
         self.assertContains(response, 'lang="id"')
-        self.assertContains(response, project.title_id)
-        self.assertContains(response, project.description_id)
-        self.assertNotContains(response, project.description)
+        self.assertContains(response, 'const USE_INDONESIAN = "id" === "id";')
+        self.assertEqual(serialized_project["fields"]["title_id"], project.title_id)
+        self.assertEqual(
+            serialized_project["fields"]["description_id"],
+            project.description_id,
+        )
 
 
 class ProjectModelTest(TestCase):
@@ -187,6 +190,49 @@ class ProjectFormTest(TestCase):
             "https://example.com/project.png",
         )
         self.assertEqual(form.fields["is_featured"].label, "Proyek Unggulan")
+
+    def test_project_form_rejects_title_containing_only_html(self):
+        project_form_class = getattr(import_module("main.forms"), "ProjectForm")
+        form = project_form_class(
+            data={
+                "title": '<img src="x" onerror="alert(1)">',
+                "description": "A project description.",
+                "category": "Backend",
+            }
+        )
+
+        self.assertFalse(form.is_valid())
+        self.assertIn(
+            "Nama proyek tidak boleh hanya berisi tag HTML.",
+            form.errors["title"],
+        )
+
+    def test_project_form_strips_html_from_text_fields(self):
+        project_form_class = getattr(import_module("main.forms"), "ProjectForm")
+        form = project_form_class(
+            data={
+                "title": "<b>Safe</b> Project",
+                "title_id": "<i>Proyek Aman</i>",
+                "description": "Built with <strong>Django</strong>.",
+                "description_id": "Dibuat dengan <strong>Django</strong>.",
+                "category": "<span>Backend</span>",
+                "project_url": "",
+                "thumbnail": "",
+            }
+        )
+
+        self.assertTrue(form.is_valid(), form.errors)
+        self.assertEqual(form.cleaned_data["title"], "Safe Project")
+        self.assertEqual(form.cleaned_data["title_id"], "Proyek Aman")
+        self.assertEqual(
+            form.cleaned_data["description"],
+            "Built with Django.",
+        )
+        self.assertEqual(
+            form.cleaned_data["description_id"],
+            "Dibuat dengan Django.",
+        )
+        self.assertEqual(form.cleaned_data["category"], "Backend")
 
 
 class ExperienceFormTest(TestCase):
@@ -715,14 +761,17 @@ class ProjectUpdateViewTest(SuperuserClientMixin, TestCase):
         self.assertEqual(self.project.category, "Full Stack")
         self.assertTrue(self.project.is_featured)
 
-    def test_project_page_links_to_update_form(self):
-        response = self.client.get(reverse("main:show_projects"))
-
-        self.assertContains(
-            response,
-            f'href="{reverse("main:update_project", args=[self.project.pk])}"',
+    def test_projects_json_links_to_update_form(self):
+        response = self.client.get(reverse("main:get_projects_json"))
+        serialized_project = next(
+            item for item in response.json() if item["pk"] == self.project.pk
         )
-        self.assertContains(response, "Edit Project")
+
+        self.assertEqual(
+            serialized_project["fields"]["update_url"],
+            reverse("main:update_project", args=[self.project.pk]),
+        )
+        self.assertTrue(serialized_project["fields"]["can_update"])
 
     def test_update_project_returns_not_found_for_unknown_project(self):
         response = self.client.get(reverse("main:update_project", args=[999999]))
@@ -886,21 +935,23 @@ class ProjectDeleteViewTest(SuperuserClientMixin, TestCase):
         self.assertRedirects(response, reverse("main:show_projects"))
         self.assertFalse(Project.objects.filter(pk=project.pk).exists())
 
-    def test_project_page_displays_delete_confirmation(self):
+    def test_projects_json_exposes_delete_action_to_superuser(self):
         project = Project.objects.create(
             title="Project With Delete Button",
             description="A removable project.",
             category="Backend",
         )
 
-        response = self.client.get(reverse("main:show_projects"))
-
-        self.assertContains(
-            response,
-            f'action="{reverse("main:delete_project", args=[project.pk])}"',
+        response = self.client.get(reverse("main:get_projects_json"))
+        serialized_project = next(
+            item for item in response.json() if item["pk"] == project.pk
         )
-        self.assertContains(response, f'id="delete-project-{project.pk}"')
-        self.assertContains(response, "Delete Project")
+
+        self.assertEqual(
+            serialized_project["fields"]["delete_url"],
+            reverse("main:delete_project", args=[project.pk]),
+        )
+        self.assertTrue(serialized_project["fields"]["can_delete"])
 
 
 class SeedProjectDataTest(TestCase):
@@ -1433,6 +1484,31 @@ class PortfolioAuthorizationTest(TestCase):
             for section in self.sections:
                 with self.subTest(user=user, section=section["page"]):
                     response = self.client.get(section["page"])
+                    if section["model"] is Project:
+                        if can_create:
+                            self.assertContains(
+                                response,
+                                'popovertarget="add-project-modal"',
+                            )
+                        else:
+                            self.assertNotContains(
+                                response,
+                                'popovertarget="add-project-modal"',
+                            )
+                        api_response = self.client.get(
+                            reverse("main:get_projects_json")
+                        )
+                        serialized_project = next(
+                            item
+                            for item in api_response.json()
+                            if item["pk"] == section["pk"]
+                        )
+                        fields = serialized_project["fields"]
+                        self.assertEqual(fields["can_update"], can_update)
+                        self.assertEqual(fields["can_delete"], can_delete)
+                        self.assertEqual(fields["star_url"], section["star"])
+                        continue
+
                     if can_create:
                         self.assertContains(response, f'href="{section["create"]}"')
                     else:
@@ -1535,7 +1611,21 @@ class PortfolioStarTest(TestCase):
         for item, star_url, page_url, _ in self.targets:
             with self.subTest(model=item._meta.label):
                 page_response = csrf_client.get(page_url)
-                self.assertContains(page_response, f'action="{star_url}"')
+                if isinstance(item, Project):
+                    api_response = csrf_client.get(
+                        reverse("main:get_projects_json")
+                    )
+                    serialized_item = next(
+                        entry
+                        for entry in api_response.json()
+                        if entry["pk"] == item.pk
+                    )
+                    self.assertEqual(
+                        serialized_item["fields"]["star_url"],
+                        star_url,
+                    )
+                else:
+                    self.assertContains(page_response, f'action="{star_url}"')
                 self.assertContains(page_response, "csrfmiddlewaretoken")
                 self.assertEqual(csrf_client.post(star_url).status_code, 403)
                 self.assertFalse(item.starred_by.filter(pk=self.user.pk).exists())
