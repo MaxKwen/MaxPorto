@@ -1,5 +1,6 @@
 from django.contrib import messages
 from django.core import serializers
+from django.db.models import Q
 from django.http import HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
@@ -92,6 +93,12 @@ EXPERIENCE_COPY = {
         "starred_by": "Starred by",
         "first_star": "Be the first to star this experience",
         "present": "present",
+        "search": "Search",
+        "search_placeholder": "Search by role or organization",
+        "no_results": "No experience matches your search.",
+        "loading": "Loading experience...",
+        "load_error": "Failed to load experience. Please try again.",
+        "retry": "Try again",
         "empty_state": "No experience has been added yet.",
     },
     "id": {
@@ -117,6 +124,12 @@ EXPERIENCE_COPY = {
         "starred_by": "Diberi star oleh",
         "first_star": "Jadilah yang pertama memberi star pada pengalaman ini",
         "present": "sekarang",
+        "search": "Cari",
+        "search_placeholder": "Cari berdasarkan posisi atau organisasi",
+        "no_results": "Tidak ada pengalaman yang sesuai dengan pencarianmu.",
+        "loading": "Memuat pengalaman...",
+        "load_error": "Gagal memuat pengalaman. Silakan coba lagi.",
+        "retry": "Coba lagi",
         "empty_state": "Belum ada pengalaman yang ditambahkan.",
     },
 }
@@ -376,23 +389,65 @@ def delete_project(request, project_id):
 
 
 def get_experiences_json(request):
-    experiences = Experience.objects.order_by("-start_year", "id")
-    experiences_json = serializers.serialize(
-        "json", experiences, use_natural_foreign_keys=True
+    search_query = request.GET.get("q", "").strip()
+    experiences = Experience.objects.prefetch_related("starred_by").order_by(
+        "-start_year", "id"
     )
-    return HttpResponse(experiences_json, content_type="application/json")
+    if search_query:
+        experiences = experiences.filter(
+            Q(title__icontains=search_query)
+            | Q(title_id__icontains=search_query)
+            | Q(organization__icontains=search_query)
+            | Q(organization_id__icontains=search_query)
+        )
+
+    can_update = request.user.is_superuser or is_editor(request.user)
+    data = []
+    for experience in experiences:
+        starred_users = list(experience.starred_by.all())
+        data.append(
+            {
+                "model": "main.experience",
+                "pk": experience.pk,
+                "fields": {
+                    "title": experience.title,
+                    "title_id": experience.title_id,
+                    "organization": experience.organization,
+                    "organization_id": experience.organization_id,
+                    "description": experience.description,
+                    "description_id": experience.description_id,
+                    "category": experience.category,
+                    "start_year": experience.start_year,
+                    "end_year": experience.end_year,
+                    "starred_by": [[user.username] for user in starred_users],
+                    "star_count": len(starred_users),
+                    "is_starred": request.user.is_authenticated
+                    and any(user.pk == request.user.pk for user in starred_users),
+                    "starred_by_names": ", ".join(
+                        user.username for user in starred_users
+                    ),
+                    "can_update": can_update,
+                    "can_delete": request.user.is_superuser,
+                    "update_url": reverse(
+                        "main:update_experience", args=[experience.pk]
+                    ),
+                    "delete_url": reverse(
+                        "main:delete_experience", args=[experience.pk]
+                    ),
+                    "star_url": reverse(
+                        "main:toggle_experience_star", args=[experience.pk]
+                    ),
+                },
+            }
+        )
+
+    return JsonResponse(data, safe=False)
 
 
 def show_experiences(request, language="en"):
-    json_response = get_experiences_json(request)
-    experiences = serializers.deserialize(
-        "json",
-        json_response.content.decode("utf-8"),
-    )
-    experiences = [experience.object for experience in experiences]
     context = {
         "copy": EXPERIENCE_COPY[language],
-        "experience_list": experiences,
+        "search_query": request.GET.get("q", "").strip(),
         "is_editor": is_editor(request.user),
     }
     return render(request, "experiences.html", context)

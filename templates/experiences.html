@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load static %}
 
 {% block title %}{{ copy.page_title }} - Maximus Quinn Hertada{% endblock title %}
 {% block meta_description %}{{ copy.meta_description }}{% endblock meta_description %}
@@ -13,7 +14,7 @@
 {% endblock language_switch %}
 
 {% block content %}
-  <section class="section projects-page experience-page">
+  <section class="section projects-page experience-page" id="experience-page" data-endpoint="{% url 'main:get_experiences_json' %}">
     <div class="projects-header">
       <div class="projects-heading">
         <p class="eyebrow">{{ copy.eyebrow }}</p>
@@ -27,39 +28,62 @@
         </a>
       {% endif %}
     </div>
-    <div class="experience-grid">
-      {% for experience in experience_list %}
-        <article class="experience-card">
-          <div class="experience-card__meta">
-            <span class="experience-period">
-              {{ experience.start_year }} — {{ experience.end_year|default:copy.present }}
-            </span>
-            <span class="experience-category">{{ experience.category }}</span>
-          </div>
-          {% if copy.language == "id" %}
-            <h2>{{ experience.title_id|default:experience.title }}</h2>
-            <p class="experience-organization">{{ experience.organization_id|default:experience.organization }}</p>
-            <p>{{ experience.description_id|default:experience.description }}</p>
-          {% else %}
-            <h2>{{ experience.title }}</h2>
-            <p class="experience-organization">{{ experience.organization }}</p>
-            <p>{{ experience.description }}</p>
-          {% endif %}
-          <div class="project-card-actions">
-            {% if user.is_superuser or is_editor %}
-              <a class="project-link" href="{% url 'main:update_experience' experience.pk %}">
-                {{ copy.edit_experience }}
-              </a>
-            {% endif %}
-            {% if user.is_superuser %}
-              {% include "components/entry_delete_modal.html" with item=experience modal_prefix="delete-experience" delete_url_name="main:delete_experience" delete_label=copy.delete_experience delete_title=copy.delete_title delete_prompt=copy.delete_prompt cancel=copy.cancel confirm_delete=copy.confirm_delete %}
-            {% endif %}
-            {% include "components/entry_star.html" with item=experience toggle_url_name="main:toggle_experience_star" %}
-          </div>
-        </article>
-      {% empty %}
-        <p class="empty-state">{{ copy.empty_state }}</p>
-      {% endfor %}
+    <form id="experience-search-form" class="project-search" method="get">
+      <input id="experience-search-input" class="project-search__input" type="search" name="q" value="{{ search_query }}" placeholder="{{ copy.search_placeholder }}" aria-label="{{ copy.search_placeholder }}" />
+      <button class="button" type="submit">{{ copy.search }}</button>
+    </form>
+    <div id="experience-loading" class="empty-state" role="status"><p>{{ copy.loading }}</p></div>
+    <div id="experience-error" class="empty-state hide" role="alert">
+      <p>{{ copy.load_error }}</p>
+      <button id="experience-retry" class="button" type="button">{{ copy.retry }}</button>
     </div>
+    <div id="experience-empty" class="empty-state hide" role="status"><p>{{ copy.empty_state }}</p></div>
+    <div id="experience-grid" class="experience-grid hide" aria-busy="true"></div>
+    <noscript><p class="empty-state">{% if copy.language == "id" %}Aktifkan JavaScript untuk memuat daftar pengalaman.{% else %}Enable JavaScript to load the experience list.{% endif %}</p></noscript>
   </section>
+
+  <template id="experience-card-template">
+    <article class="experience-card">
+      <div class="experience-card__meta">
+        <span class="experience-period"></span>
+        <span class="experience-category"></span>
+      </div>
+      <h2></h2>
+      <p class="experience-organization"></p>
+      <p class="experience-description"></p>
+      <div class="project-card-actions">
+        {% if user.is_superuser or is_editor %}
+          <a class="project-link experience-edit">{{ copy.edit_experience }}</a>
+        {% endif %}
+        {% if user.is_superuser %}
+          <button type="button" class="button button-danger experience-delete">{{ copy.delete_experience }}</button>
+          <div class="project-delete-modal" popover="auto" role="dialog" aria-modal="true">
+            <button type="button" class="project-delete-modal__backdrop" popovertargetaction="hide" aria-label="{{ copy.cancel }}"></button>
+            <div class="project-delete-modal__content">
+              <button type="button" class="project-delete-modal__close" popovertargetaction="hide" aria-label="{{ copy.cancel }}">×</button>
+              <h2>{{ copy.delete_title }}</h2>
+              <p>{{ copy.delete_prompt }} <strong></strong>?</p>
+              <div class="project-delete-modal__actions">
+                <button type="button" class="button button-secondary" popovertargetaction="hide">{{ copy.cancel }}</button>
+                <form method="post">
+                  {% csrf_token %}
+                  <button type="submit" class="button button-danger">{{ copy.confirm_delete }}</button>
+                </form>
+              </div>
+            </div>
+          </div>
+        {% endif %}
+        <form method="post" class="star-form">
+          {% csrf_token %}
+          <button type="submit" class="button button-star">
+            <span aria-hidden="true">★</span>
+            <span class="star-label"></span>
+            <span class="star-count"></span>
+          </button>
+        </form>
+      </div>
+    </article>
+  </template>
+  {{ copy|json_script:"experience-copy" }}
+  <script src="{% static 'js/experiences.js' %}" defer></script>
 {% endblock content %}
