@@ -22,10 +22,10 @@
             <p class="projects-intro">{{ copy.intro }}</p>
           </div>
           {% if user.is_superuser %}
-            <a class="button project-add-button" href="{% url 'main:create_achievement' %}">
+            <button type="button" class="button project-add-button" popovertarget="add-achievement-modal">
               <span aria-hidden="true">+</span>
               {{ copy.add_achievement }}
-            </a>
+            </button>
           {% endif %}
         </div>
         <form id="achievement-search-form" class="project-search" method="get">
@@ -41,6 +41,9 @@
         <div id="achievement-grid" class="achievement-grid hide" aria-busy="true"></div>
         <noscript><p class="empty-state">{% if copy.language == "id" %}Aktifkan JavaScript untuk memuat daftar prestasi.{% else %}Enable JavaScript to load the achievement list.{% endif %}</p></noscript>
       </section>
+      {% if user.is_superuser %}
+        {% include "components/achievement_form_modal.html" %}
+      {% endif %}
       <template id="achievement-card-template">
             <article class="achievement-card">
               <div class="achievement-card__meta">

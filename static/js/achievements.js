@@ -18,6 +18,7 @@
   const SEARCH_DEBOUNCE_DELAY = 300;
   let searchTimer;
   let activeController;
+  let addingAchievement = false;
 
   function showState(name) {
     Object.entries(states).forEach(([key, element]) => {
@@ -140,5 +141,87 @@
     searchAchievements();
   });
   retryButton.addEventListener("click", searchAchievements);
+  const achievementForm = document.getElementById("achievement-form");
+  const addModal = document.getElementById("add-achievement-modal");
+
+  function clearFormErrors() {
+    achievementForm.querySelectorAll("[data-error-for]").forEach((element) => {
+      element.textContent = "";
+    });
+    achievementForm.querySelectorAll("[aria-invalid]").forEach((field) => {
+      field.removeAttribute("aria-invalid");
+    });
+    const summary = document.getElementById("achievement-form-errors");
+    summary.textContent = "";
+    summary.classList.add("hide");
+  }
+
+  function displayFormErrors(errors) {
+    const messages = [];
+    Object.entries(errors).forEach(([name, fieldErrors]) => {
+      const text = fieldErrors.map((error) => error.message).join(" ");
+      const field = achievementForm.elements.namedItem(name);
+      const errorElement = Array.from(
+        achievementForm.querySelectorAll("[data-error-for]")
+      ).find((element) => element.dataset.errorFor === name);
+      if (field && errorElement) {
+        field.setAttribute("aria-invalid", "true");
+        errorElement.textContent = text;
+        messages.push(`${field.labels[0].textContent}: ${text}`);
+      } else {
+        const summary = document.getElementById("achievement-form-errors");
+        summary.textContent = text;
+        summary.classList.remove("hide");
+        messages.push(text);
+      }
+    });
+    return messages.join(" ");
+  }
+
+  async function addAchievement(event) {
+    event.preventDefault();
+    if (addingAchievement) return;
+
+    addingAchievement = true;
+    clearFormErrors();
+    const submitButton = achievementForm.querySelector('button[type="submit"]');
+    submitButton.disabled = true;
+    submitButton.textContent = copy.adding;
+
+    try {
+      // FormData includes the CSRF token rendered by Django in the modal.
+      const response = await fetch(achievementForm.action, {
+        method: "POST",
+        body: new FormData(achievementForm),
+        headers: { Accept: "application/json" },
+      });
+      const result = await response.json().catch(() => null);
+
+      if (response.status === 201 && result) {
+        achievementForm.reset();
+        addModal.hidePopover();
+        showToast(copy.add_success_title, result.message || copy.add_success, "success");
+        clearTimeout(searchTimer);
+        await fetchAchievements(searchInput.value.trim());
+      } else {
+        const message = result?.errors
+          ? displayFormErrors(result.errors)
+          : (result?.message || (response.status === 403 ? copy.request_rejected : copy.add_error));
+        showToast(copy.add_error_title, message || copy.add_error, "error");
+      }
+    } catch (error) {
+      console.error("Error adding achievement:", error);
+      showToast(copy.add_error_title, copy.connection_error, "error");
+    } finally {
+      addingAchievement = false;
+      submitButton.disabled = false;
+      submitButton.textContent = copy.add_achievement;
+    }
+  }
+
+  // The modal is deliberately absent for guests, ordinary users, and Editors.
+  if (achievementForm && addModal) {
+    achievementForm.addEventListener("submit", addAchievement);
+  }
   searchAchievements();
 })();

@@ -217,6 +217,25 @@ ACHIEVEMENT_COPY = {
         "eyebrow": "Portfolio / Achievements",
         "intro": "Milestones from academic competitions and continuous learning.",
         "add_achievement": "Add Achievement",
+        "add_heading": "Add New Achievement",
+        "adding": "Adding...",
+        "close_form": "Close add achievement form",
+        "add_success_title": "Success",
+        "add_success": "Achievement added successfully.",
+        "add_error_title": "Could not add achievement",
+        "add_error": "The request failed. Please try again.",
+        "connection_error": "Could not reach the server. Please try again.",
+        "permission_denied": "Only the portfolio owner can add achievements.",
+        "request_rejected": "Request rejected. Refresh the page and check your access.",
+        "form_labels": {
+            "title": "Achievement (English)",
+            "title_id": "Achievement (Indonesian)",
+            "result": "Result (English)",
+            "result_id": "Result (Indonesian)",
+            "category": "Category",
+            "year": "Year",
+            "display_order": "Display order",
+        },
         "edit_achievement": "Edit Achievement",
         "delete_achievement": "Delete Achievement",
         "delete_title": "Delete achievement?",
@@ -247,6 +266,16 @@ ACHIEVEMENT_COPY = {
         "eyebrow": "Portofolio / Prestasi",
         "intro": "Pencapaian dari kompetisi akademik dan proses belajar berkelanjutan.",
         "add_achievement": "Tambah Prestasi",
+        "add_heading": "Tambah Prestasi Baru",
+        "adding": "Menambahkan...",
+        "close_form": "Tutup form tambah prestasi",
+        "add_success_title": "Berhasil",
+        "add_success": "Prestasi berhasil ditambahkan.",
+        "add_error_title": "Gagal menambahkan prestasi",
+        "add_error": "Permintaan gagal. Silakan coba lagi.",
+        "connection_error": "Tidak dapat terhubung ke server. Silakan coba lagi.",
+        "permission_denied": "Hanya pemilik portofolio yang dapat menambah prestasi.",
+        "request_rejected": "Permintaan ditolak. Muat ulang halaman dan periksa hak aksesmu.",
         "edit_achievement": "Edit Prestasi",
         "delete_achievement": "Hapus Prestasi",
         "delete_title": "Hapus prestasi?",
@@ -653,7 +682,32 @@ def show_achievements(request, language="en"):
         "search_query": request.GET.get("q", "").strip(),
         "is_editor": is_editor(request.user),
     }
+    if request.user.is_superuser:
+        form = AchievementForm()
+        for name, label in ACHIEVEMENT_COPY[language].get("form_labels", {}).items():
+            form.fields[name].label = label
+        for name, field in form.fields.items():
+            field.widget.attrs["aria-describedby"] = f"achievement-error-{name}"
+        form.fields["title"].widget.attrs["autofocus"] = True
+        context["form"] = form
     return render(request, "achievements.html", context)
+
+
+@require_POST
+def create_achievement_ajax(request):
+    language = request.POST.get("language", "en")
+    copy = ACHIEVEMENT_COPY.get(language, ACHIEVEMENT_COPY["en"])
+    if not request.user.is_superuser:
+        return JsonResponse({"message": copy["permission_denied"]}, status=403)
+
+    form = AchievementForm(request.POST)
+    if form.is_valid():
+        achievement = form.save()
+        return JsonResponse(
+            {"message": copy["add_success"], "pk": achievement.pk}, status=201
+        )
+
+    return JsonResponse({"errors": form.errors.get_json_data()}, status=400)
 
 
 @login_required(login_url="/login/")

@@ -231,3 +231,26 @@ class AchievementForm(ModelForm):
             "year": NumberInput(attrs={"min": 1900, "max": 2100}),
             "display_order": NumberInput(attrs={"min": 0}),
         }
+
+    def _clean_text(self, field_name):
+        value = strip_tags(self.cleaned_data[field_name]).strip()
+        if self.fields[field_name].required and not value:
+            raise ValidationError(
+                "Kolom ini harus berisi teks, bukan hanya tag HTML."
+            )
+        return value
+
+    def clean_title(self):
+        return self._clean_text("title")
+
+    def clean_title_id(self):
+        return self._clean_text("title_id")
+
+    def clean_result(self):
+        return self._clean_text("result")
+
+    def clean_result_id(self):
+        return self._clean_text("result_id")
+
+    def clean_category(self):
+        return self._clean_text("category")

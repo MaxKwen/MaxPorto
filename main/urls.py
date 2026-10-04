@@ -2,6 +2,7 @@ from django.urls import path
 
 from main.views import (
     create_achievement,
+    create_achievement_ajax,
     create_experience,
     create_experience_ajax,
     create_project,
@@ -70,6 +71,11 @@ urlpatterns = [
         name="show_experiences_id",
     ),
     path("achievements/", show_achievements, name="show_achievements"),
+    path(
+        "achievements/add-ajax/",
+        create_achievement_ajax,
+        name="create_achievement_ajax",
+    ),
     path(
         "achievements/add/",
         create_achievement,
