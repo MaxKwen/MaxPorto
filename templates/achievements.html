@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load static %}
 
 {% block title %}{{ copy.page_title }} - Maximus Quinn Hertada{% endblock title %}
 {% block meta_description %}{{ copy.meta_description }}{% endblock meta_description %}
@@ -13,7 +14,7 @@
 {% endblock language_switch %}
 
 {% block content %}
-      <section class="section projects-page achievement-page">
+      <section class="section projects-page achievement-page" id="achievement-page" data-endpoint="{% url 'main:get_achievements_json' %}">
         <div class="projects-header">
           <div class="projects-heading">
             <p class="eyebrow">{{ copy.eyebrow }}</p>
@@ -27,37 +28,62 @@
             </a>
           {% endif %}
         </div>
-        <div class="achievement-grid">
-          {% for achievement in achievement_list %}
+        <form id="achievement-search-form" class="project-search" method="get">
+          <input id="achievement-search-input" class="project-search__input" type="search" name="q" value="{{ search_query }}" placeholder="{{ copy.search_placeholder }}" aria-label="{{ copy.search_placeholder }}" />
+          <button class="button" type="submit">{{ copy.search }}</button>
+        </form>
+        <div id="achievement-loading" class="empty-state" role="status"><p>{{ copy.loading }}</p></div>
+        <div id="achievement-error" class="empty-state hide" role="alert">
+          <p>{{ copy.load_error }}</p>
+          <button id="achievement-retry" class="button" type="button">{{ copy.retry }}</button>
+        </div>
+        <div id="achievement-empty" class="empty-state hide" role="status"><p>{{ copy.empty_state }}</p></div>
+        <div id="achievement-grid" class="achievement-grid hide" aria-busy="true"></div>
+        <noscript><p class="empty-state">{% if copy.language == "id" %}Aktifkan JavaScript untuk memuat daftar prestasi.{% else %}Enable JavaScript to load the achievement list.{% endif %}</p></noscript>
+      </section>
+      <template id="achievement-card-template">
             <article class="achievement-card">
               <div class="achievement-card__meta">
-                <span class="achievement-category">{{ achievement.category }}</span>
-                {% if achievement.year %}
-                  <span class="achievement-year">{{ achievement.year }}</span>
-                {% endif %}
+                <span class="achievement-category"></span>
+                <span class="achievement-year"></span>
               </div>
-              {% if copy.language == "id" %}
-                <h2>{{ achievement.title_id|default:achievement.title }}</h2>
-                <p>{{ achievement.result_id|default:achievement.result }}</p>
-              {% else %}
-                <h2>{{ achievement.title }}</h2>
-                <p>{{ achievement.result }}</p>
-              {% endif %}
+              <h2></h2>
+              <p class="achievement-result"></p>
               <div class="project-card-actions">
                 {% if user.is_superuser or is_editor %}
-                  <a class="project-link" href="{% url 'main:update_achievement' achievement.pk %}">
+                  <a class="project-link achievement-edit">
                     {{ copy.edit_achievement }}
                   </a>
                 {% endif %}
                 {% if user.is_superuser %}
-                  {% include "components/entry_delete_modal.html" with item=achievement modal_prefix="delete-achievement" delete_url_name="main:delete_achievement" delete_label=copy.delete_achievement delete_title=copy.delete_title delete_prompt=copy.delete_prompt cancel=copy.cancel confirm_delete=copy.confirm_delete %}
+                  <button type="button" class="button button-danger achievement-delete">{{ copy.delete_achievement }}</button>
+                  <div class="project-delete-modal" popover="auto" role="dialog" aria-modal="true">
+                    <button type="button" class="project-delete-modal__backdrop" popovertargetaction="hide" aria-label="{{ copy.cancel }}"></button>
+                    <div class="project-delete-modal__content">
+                      <button type="button" class="project-delete-modal__close" popovertargetaction="hide" aria-label="{{ copy.cancel }}">×</button>
+                      <h2>{{ copy.delete_title }}</h2>
+                      <p>{{ copy.delete_prompt }} <strong></strong>?</p>
+                      <div class="project-delete-modal__actions">
+                        <button type="button" class="button button-secondary" popovertargetaction="hide">{{ copy.cancel }}</button>
+                        <form method="post">
+                          {% csrf_token %}
+                          <button type="submit" class="button button-danger">{{ copy.confirm_delete }}</button>
+                        </form>
+                      </div>
+                    </div>
+                  </div>
                 {% endif %}
-                {% include "components/entry_star.html" with item=achievement toggle_url_name="main:toggle_achievement_star" %}
+                <form method="post" class="star-form">
+                  {% csrf_token %}
+                  <button type="submit" class="button button-star">
+                    <span aria-hidden="true">★</span>
+                    <span class="star-label"></span>
+                    <span class="star-count"></span>
+                  </button>
+                </form>
               </div>
             </article>
-          {% empty %}
-            <p class="empty-state">{{ copy.empty_state }}</p>
-          {% endfor %}
-        </div>
-      </section>
+      </template>
+      {{ copy|json_script:"achievement-copy" }}
+      <script src="{% static 'js/achievements.js' %}" defer></script>
 {% endblock content %}

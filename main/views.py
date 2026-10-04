@@ -227,6 +227,12 @@ ACHIEVEMENT_COPY = {
         "unstar": "Unstar",
         "starred_by": "Starred by",
         "first_star": "Be the first to star this achievement",
+        "search_placeholder": "Search achievement titles or results...",
+        "search": "Search",
+        "no_results": "No achievements match your search.",
+        "loading": "Loading achievements...",
+        "load_error": "Failed to load achievements. Please try again.",
+        "retry": "Try again",
         "empty_state": "No achievements have been added yet.",
     },
     "id": {
@@ -251,6 +257,12 @@ ACHIEVEMENT_COPY = {
         "unstar": "Batalkan Star",
         "starred_by": "Diberi star oleh",
         "first_star": "Jadilah yang pertama memberi star pada prestasi ini",
+        "search_placeholder": "Cari judul atau hasil prestasi...",
+        "search": "Cari",
+        "no_results": "Tidak ada prestasi yang cocok dengan pencarianmu.",
+        "loading": "Memuat prestasi...",
+        "load_error": "Gagal memuat prestasi. Silakan coba lagi.",
+        "retry": "Coba lagi",
         "empty_state": "Belum ada prestasi yang ditambahkan.",
     },
 }
@@ -584,23 +596,61 @@ def show_skills(request, language="en"):
 
 
 def get_achievements_json(request):
-    achievements = Achievement.objects.all()
-    achievements_json = serializers.serialize(
-        "json", achievements, use_natural_foreign_keys=True
-    )
-    return HttpResponse(achievements_json, content_type="application/json")
+    search_query = request.GET.get("q", "").strip()
+    achievements = Achievement.objects.prefetch_related("starred_by")
+    if search_query:
+        achievements = achievements.filter(
+            Q(title__icontains=search_query)
+            | Q(title_id__icontains=search_query)
+            | Q(result__icontains=search_query)
+            | Q(result_id__icontains=search_query)
+        )
+
+    can_update = request.user.is_superuser or is_editor(request.user)
+    data = []
+    for achievement in achievements:
+        starred_users = list(achievement.starred_by.all())
+        data.append(
+            {
+                "model": "main.achievement",
+                "pk": achievement.pk,
+                "fields": {
+                    "title": achievement.title,
+                    "title_id": achievement.title_id,
+                    "result": achievement.result,
+                    "result_id": achievement.result_id,
+                    "category": achievement.category,
+                    "year": achievement.year,
+                    "display_order": achievement.display_order,
+                    "starred_by": [[user.username] for user in starred_users],
+                    "star_count": len(starred_users),
+                    "is_starred": request.user.is_authenticated
+                    and any(user.pk == request.user.pk for user in starred_users),
+                    "starred_by_names": ", ".join(
+                        user.username for user in starred_users
+                    ),
+                    "can_update": can_update,
+                    "can_delete": request.user.is_superuser,
+                    "update_url": reverse(
+                        "main:update_achievement", args=[achievement.pk]
+                    ),
+                    "delete_url": reverse(
+                        "main:delete_achievement", args=[achievement.pk]
+                    ),
+                    "star_url": reverse(
+                        "main:toggle_achievement_star", args=[achievement.pk]
+                    ),
+                },
+            }
+        )
+
+    return JsonResponse(data, safe=False)
 
 
 def show_achievements(request, language="en"):
-    json_response = get_achievements_json(request)
-    achievements = serializers.deserialize(
-        "json",
-        json_response.content.decode("utf-8"),
-    )
-    achievements = [achievement.object for achievement in achievements]
     context = {
         "copy": ACHIEVEMENT_COPY[language],
-        "achievement_list": achievements,
+        "search_query": request.GET.get("q", "").strip(),
         "is_editor": is_editor(request.user),
     }
     return render(request, "achievements.html", context)
