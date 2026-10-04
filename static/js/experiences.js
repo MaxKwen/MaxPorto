@@ -18,6 +18,7 @@
   const SEARCH_DEBOUNCE_DELAY = 300;
   let searchTimer;
   let activeController;
+  let addingExperience = false;
 
   function showState(name) {
     Object.entries(states).forEach(([key, element]) => {
@@ -104,7 +105,7 @@
       if (!response.ok) throw new Error(`HTTP ${response.status}`);
       const items = await response.json();
       if (!Array.isArray(items)) throw new Error("Invalid experience response");
-      if (controller !== activeController) return;
+      if (controller.signal.aborted || controller !== activeController) return;
 
       if (items.length === 0) {
         grid.replaceChildren();
@@ -141,5 +142,88 @@
     searchExperiences();
   });
   retryButton.addEventListener("click", searchExperiences);
+
+  const experienceForm = document.getElementById("experience-form");
+  const addModal = document.getElementById("add-experience-modal");
+
+  function clearFormErrors() {
+    experienceForm.querySelectorAll("[data-error-for]").forEach((element) => {
+      element.textContent = "";
+    });
+    experienceForm.querySelectorAll("[aria-invalid]").forEach((field) => {
+      field.removeAttribute("aria-invalid");
+    });
+    const summary = document.getElementById("experience-form-errors");
+    summary.textContent = "";
+    summary.classList.add("hide");
+  }
+
+  function displayFormErrors(errors) {
+    const messages = [];
+    Object.entries(errors).forEach(([name, fieldErrors]) => {
+      const text = fieldErrors.map((error) => error.message).join(" ");
+      const field = experienceForm.elements.namedItem(name);
+      const errorElement = Array.from(
+        experienceForm.querySelectorAll("[data-error-for]")
+      ).find((element) => element.dataset.errorFor === name);
+      if (field && errorElement) {
+        field.setAttribute("aria-invalid", "true");
+        errorElement.textContent = text;
+        messages.push(`${field.labels[0].textContent}: ${text}`);
+      } else {
+        const summary = document.getElementById("experience-form-errors");
+        summary.textContent = text;
+        summary.classList.remove("hide");
+        messages.push(text);
+      }
+    });
+    return messages.join(" ");
+  }
+
+  async function addExperience(event) {
+    event.preventDefault();
+    if (addingExperience) return;
+
+    addingExperience = true;
+    clearFormErrors();
+    const submitButton = experienceForm.querySelector('button[type="submit"]');
+    submitButton.disabled = true;
+    submitButton.textContent = copy.adding;
+
+    try {
+      // FormData includes the CSRF token rendered by Django in the modal.
+      const response = await fetch(experienceForm.action, {
+        method: "POST",
+        body: new FormData(experienceForm),
+        headers: { Accept: "application/json" },
+      });
+      const result = await response.json().catch(() => null);
+
+      if (response.status === 201 && result) {
+        experienceForm.reset();
+        addModal.hidePopover();
+        showToast(copy.add_success_title, result.message || copy.add_success, "success");
+        clearTimeout(searchTimer);
+        await fetchExperiences(searchInput.value.trim());
+      } else {
+        const message = result?.errors
+          ? displayFormErrors(result.errors)
+          : (result?.message || (response.status === 403 ? copy.request_rejected : copy.add_error));
+        showToast(copy.add_error_title, message || copy.add_error, "error");
+      }
+    } catch (error) {
+      console.error("Error adding experience:", error);
+      showToast(copy.add_error_title, copy.connection_error, "error");
+    } finally {
+      addingExperience = false;
+      submitButton.disabled = false;
+      submitButton.textContent = copy.add_experience;
+    }
+  }
+
+  // The modal is deliberately absent for guests, ordinary users, and Editors.
+  if (experienceForm && addModal) {
+    experienceForm.addEventListener("submit", addExperience);
+  }
   searchExperiences();
 })();

@@ -1,0 +1,47 @@
+<div id="add-experience-modal"
+     class="project-form-modal"
+     popover="auto"
+     role="dialog"
+     aria-modal="true"
+     aria-labelledby="add-experience-modal-title">
+  <button type="button"
+          class="project-form-modal__backdrop"
+          popovertarget="add-experience-modal"
+          popovertargetaction="hide"
+          aria-label="{{ copy.close_form }}"></button>
+
+  <div class="project-form-modal__content">
+    <button type="button"
+            class="project-form-modal__close"
+            popovertarget="add-experience-modal"
+            popovertargetaction="hide"
+            aria-label="{{ copy.close_form }}">×</button>
+
+    <h2 id="add-experience-modal-title">{{ copy.add_heading }}</h2>
+    <form id="experience-form"
+          method="post"
+          action="{% url 'main:create_experience_ajax' %}"
+          class="project-form">
+      {% csrf_token %}
+      <input type="hidden" name="language" value="{{ copy.language }}" />
+      <p id="experience-form-errors" class="form-error errorlist hide" role="alert"></p>
+      {% for field in form %}
+        <div class="form-group">
+          <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+          {{ field }}
+          <p id="experience-error-{{ field.name }}"
+             class="form-error"
+             data-error-for="{{ field.name }}"
+             aria-live="polite"></p>
+        </div>
+      {% endfor %}
+      <div class="project-form-modal__actions">
+        <button type="button"
+                class="button button-secondary"
+                popovertarget="add-experience-modal"
+                popovertargetaction="hide">{{ copy.cancel }}</button>
+        <button type="submit" class="button">{{ copy.add_experience }}</button>
+      </div>
+    </form>
+  </div>
+</div>

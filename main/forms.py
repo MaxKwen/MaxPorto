@@ -153,6 +153,45 @@ class ExperienceForm(ModelForm):
             "end_year": NumberInput(attrs={"min": 1900, "max": 2100}),
         }
 
+    def _clean_text(self, field_name):
+        value = strip_tags(self.cleaned_data[field_name]).strip()
+        if self.fields[field_name].required and not value:
+            raise ValidationError(
+                "Kolom ini harus berisi teks, bukan hanya tag HTML."
+            )
+        return value
+
+    def clean_title(self):
+        return self._clean_text("title")
+
+    def clean_title_id(self):
+        return self._clean_text("title_id")
+
+    def clean_organization(self):
+        return self._clean_text("organization")
+
+    def clean_organization_id(self):
+        return self._clean_text("organization_id")
+
+    def clean_description(self):
+        return self._clean_text("description")
+
+    def clean_description_id(self):
+        return self._clean_text("description_id")
+
+    def clean_category(self):
+        return self._clean_text("category")
+
+    def clean(self):
+        cleaned_data = super().clean()
+        start_year = cleaned_data.get("start_year")
+        end_year = cleaned_data.get("end_year")
+        if start_year is not None and end_year is not None and end_year < start_year:
+            self.add_error(
+                "end_year", "Tahun selesai tidak boleh lebih awal dari tahun mulai."
+            )
+        return cleaned_data
+
 
 class AchievementForm(ModelForm):
     year = IntegerField(

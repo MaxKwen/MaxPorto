@@ -82,6 +82,27 @@ EXPERIENCE_COPY = {
         "eyebrow": "Portfolio / Experience",
         "intro": "Roles and communities that have shaped my professional growth.",
         "add_experience": "Add Experience",
+        "add_heading": "Add New Experience",
+        "adding": "Adding...",
+        "close_form": "Close add experience form",
+        "add_success_title": "Success",
+        "add_success": "Experience added successfully.",
+        "add_error_title": "Could not add experience",
+        "add_error": "The request failed. Please try again.",
+        "connection_error": "Could not reach the server. Please try again.",
+        "permission_denied": "Only the portfolio owner can add experience.",
+        "request_rejected": "Request rejected. Refresh the page and check your access.",
+        "form_labels": {
+            "title": "Role (English)",
+            "title_id": "Role (Indonesian)",
+            "organization": "Organization (English)",
+            "organization_id": "Organization (Indonesian)",
+            "description": "Description (English)",
+            "description_id": "Description (Indonesian)",
+            "category": "Category",
+            "start_year": "Start year",
+            "end_year": "End year",
+        },
         "edit_experience": "Edit Experience",
         "delete_experience": "Delete Experience",
         "delete_title": "Delete experience?",
@@ -113,6 +134,16 @@ EXPERIENCE_COPY = {
         "eyebrow": "Portofolio / Pengalaman",
         "intro": "Peran dan komunitas yang membentuk perkembangan profesional saya.",
         "add_experience": "Tambah Pengalaman",
+        "add_heading": "Tambah Pengalaman Baru",
+        "adding": "Menambahkan...",
+        "close_form": "Tutup form tambah pengalaman",
+        "add_success_title": "Berhasil",
+        "add_success": "Pengalaman berhasil ditambahkan.",
+        "add_error_title": "Gagal menambahkan pengalaman",
+        "add_error": "Permintaan gagal. Silakan coba lagi.",
+        "connection_error": "Tidak dapat terhubung ke server. Silakan coba lagi.",
+        "permission_denied": "Hanya pemilik portofolio yang dapat menambah pengalaman.",
+        "request_rejected": "Permintaan ditolak. Muat ulang halaman dan periksa hak aksesmu.",
         "edit_experience": "Edit Pengalaman",
         "delete_experience": "Hapus Pengalaman",
         "delete_title": "Hapus pengalaman?",
@@ -450,6 +481,14 @@ def show_experiences(request, language="en"):
         "search_query": request.GET.get("q", "").strip(),
         "is_editor": is_editor(request.user),
     }
+    if request.user.is_superuser:
+        form = ExperienceForm()
+        for name, label in EXPERIENCE_COPY[language].get("form_labels", {}).items():
+            form.fields[name].label = label
+        for name, field in form.fields.items():
+            field.widget.attrs["aria-describedby"] = f"experience-error-{name}"
+        form.fields["title"].widget.attrs["autofocus"] = True
+        context["form"] = form
     return render(request, "experiences.html", context)
 
 
@@ -486,6 +525,23 @@ def create_experience(request):
         "submit_label": "Tambah Pengalaman",
     }
     return render(request, "experiences_form.html", context)
+
+
+@require_POST
+def create_experience_ajax(request):
+    language = request.POST.get("language", "en")
+    copy = EXPERIENCE_COPY.get(language, EXPERIENCE_COPY["en"])
+    if not request.user.is_superuser:
+        return JsonResponse({"message": copy["permission_denied"]}, status=403)
+
+    form = ExperienceForm(request.POST)
+    if form.is_valid():
+        experience = form.save()
+        return JsonResponse(
+            {"message": copy["add_success"], "pk": experience.pk}, status=201
+        )
+
+    return JsonResponse({"errors": form.errors.get_json_data()}, status=400)
 
 
 @login_required(login_url="/login/")

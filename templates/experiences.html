@@ -22,10 +22,10 @@
         <p class="projects-intro">{{ copy.intro }}</p>
       </div>
       {% if user.is_superuser %}
-        <a class="button project-add-button" href="{% url 'main:create_experience' %}">
+        <button type="button" class="button project-add-button" popovertarget="add-experience-modal">
           <span aria-hidden="true">+</span>
           {{ copy.add_experience }}
-        </a>
+        </button>
       {% endif %}
     </div>
     <form id="experience-search-form" class="project-search" method="get">
@@ -41,6 +41,10 @@
     <div id="experience-grid" class="experience-grid hide" aria-busy="true"></div>
     <noscript><p class="empty-state">{% if copy.language == "id" %}Aktifkan JavaScript untuk memuat daftar pengalaman.{% else %}Enable JavaScript to load the experience list.{% endif %}</p></noscript>
   </section>
+
+  {% if user.is_superuser %}
+    {% include "components/experience_form_modal.html" %}
+  {% endif %}
 
   <template id="experience-card-template">
     <article class="experience-card">
