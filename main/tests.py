@@ -5,8 +5,6 @@ from unittest.mock import patch
 from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Group
-from django.core import serializers
-from django.http import HttpResponse
 from django.test import Client, TestCase
 from django.urls import reverse
 
@@ -383,12 +381,12 @@ class ExperienceCreateViewTest(SuperuserClientMixin, TestCase):
         self.assertEqual(experience.title_id, "Asisten Riset")
         self.assertEqual(experience.end_year, 2026)
 
-    def test_experience_page_links_to_create_form(self):
+    def test_experience_page_has_ajax_create_modal(self):
         response = self.client.get(reverse("main:show_experiences"))
 
         self.assertContains(
             response,
-            f'href="{reverse("main:create_experience")}"',
+            f'action="{reverse("main:create_experience_ajax")}"',
         )
         self.assertContains(response, "Add Experience")
 
@@ -430,12 +428,12 @@ class AchievementCreateViewTest(SuperuserClientMixin, TestCase):
         self.assertEqual(achievement.title_id, "Kompetisi Pemrograman")
         self.assertEqual(achievement.display_order, 3)
 
-    def test_achievement_page_links_to_create_form(self):
+    def test_achievement_page_has_ajax_create_modal(self):
         response = self.client.get(reverse("main:show_achievements"))
 
         self.assertContains(
             response,
-            f'href="{reverse("main:create_achievement")}"',
+            f'action="{reverse("main:create_achievement_ajax")}"',
         )
         self.assertContains(response, "Add Achievement")
 
@@ -492,11 +490,13 @@ class ExperienceUpdateViewTest(SuperuserClientMixin, TestCase):
 
     def test_experience_page_links_to_update_form(self):
         response = self.client.get(reverse("main:show_experiences"))
-
-        self.assertContains(
-            response,
-            f'href="{reverse("main:update_experience", args=[self.experience.pk])}"',
+        payload = self.client.get(reverse("main:get_experiences_json")).json()
+        fields = next(item["fields"] for item in payload if item["pk"] == self.experience.pk)
+        self.assertEqual(
+            fields["update_url"],
+            reverse("main:update_experience", args=[self.experience.pk]),
         )
+        self.assertTrue(fields["can_update"])
         self.assertContains(response, "Edit Experience")
 
     def test_update_experience_returns_not_found_for_unknown_entry(self):
@@ -570,11 +570,13 @@ class AchievementUpdateViewTest(SuperuserClientMixin, TestCase):
 
     def test_achievement_page_links_to_update_form(self):
         response = self.client.get(reverse("main:show_achievements"))
-
-        self.assertContains(
-            response,
-            f'href="{reverse("main:update_achievement", args=[self.achievement.pk])}"',
+        payload = self.client.get(reverse("main:get_achievements_json")).json()
+        fields = next(item["fields"] for item in payload if item["pk"] == self.achievement.pk)
+        self.assertEqual(
+            fields["update_url"],
+            reverse("main:update_achievement", args=[self.achievement.pk]),
         )
+        self.assertTrue(fields["can_update"])
         self.assertContains(response, "Edit Achievement")
 
     def test_update_achievement_returns_not_found_for_unknown_entry(self):
@@ -619,12 +621,15 @@ class ExperienceDeleteViewTest(SuperuserClientMixin, TestCase):
 
     def test_experience_page_displays_delete_confirmation(self):
         response = self.client.get(reverse("main:show_experiences"))
-
-        self.assertContains(
-            response,
-            f'action="{reverse("main:delete_experience", args=[self.experience.pk])}"',
+        payload = self.client.get(reverse("main:get_experiences_json")).json()
+        fields = next(item["fields"] for item in payload if item["pk"] == self.experience.pk)
+        self.assertEqual(
+            fields["delete_url"],
+            reverse("main:delete_experience", args=[self.experience.pk]),
         )
-        self.assertContains(response, f'id="delete-experience-{self.experience.pk}"')
+        self.assertTrue(fields["can_delete"])
+        self.assertContains(response, 'class="project-delete-modal"')
+        self.assertContains(response, 'popovertargetaction="hide"')
         self.assertContains(response, "Delete Experience")
 
 
@@ -657,12 +662,15 @@ class AchievementDeleteViewTest(SuperuserClientMixin, TestCase):
 
     def test_achievement_page_displays_delete_confirmation(self):
         response = self.client.get(reverse("main:show_achievements"))
-
-        self.assertContains(
-            response,
-            f'action="{reverse("main:delete_achievement", args=[self.achievement.pk])}"',
+        payload = self.client.get(reverse("main:get_achievements_json")).json()
+        fields = next(item["fields"] for item in payload if item["pk"] == self.achievement.pk)
+        self.assertEqual(
+            fields["delete_url"],
+            reverse("main:delete_achievement", args=[self.achievement.pk]),
         )
-        self.assertContains(response, f'id="delete-achievement-{self.achievement.pk}"')
+        self.assertTrue(fields["can_delete"])
+        self.assertContains(response, 'class="project-delete-modal"')
+        self.assertContains(response, 'popovertargetaction="hide"')
         self.assertContains(response, "Delete Achievement")
 
 
@@ -843,29 +851,13 @@ class ExperienceDataDeliveryTest(TestCase):
             experience.title,
         )
 
-    def test_experience_page_deserializes_json_response(self):
-        experience = Experience.objects.create(
-            title="Deserialized Experience",
-            organization="University of Indonesia",
-            description="Rendered after JSON deserialization.",
-            category="Research",
-            start_year=2026,
-        )
-        payload = serializers.serialize(
-            "json",
-            Experience.objects.filter(pk=experience.pk),
-        )
-
+    def test_experience_page_defers_data_loading_to_javascript(self):
         with patch("main.views.get_experiences_json") as get_json:
-            get_json.return_value = HttpResponse(
-                payload,
-                content_type="application/json",
-            )
             response = self.client.get(reverse("main:show_experiences"))
-
-        get_json.assert_called_once()
-        self.assertContains(response, experience.title)
-        self.assertContains(response, experience.description)
+        get_json.assert_not_called()
+        self.assertContains(response, f'data-endpoint="{reverse("main:get_experiences_json")}"')
+        self.assertContains(response, 'id="experience-card-template"')
+        self.assertContains(response, '/static/js/experiences.js')
 
 
 class AchievementDataDeliveryTest(TestCase):
@@ -892,29 +884,13 @@ class AchievementDataDeliveryTest(TestCase):
             achievement.title,
         )
 
-    def test_achievement_page_deserializes_json_response(self):
-        achievement = Achievement.objects.create(
-            title="Deserialized Achievement",
-            result="National finalist",
-            category="Competition",
-            year=2026,
-            display_order=10,
-        )
-        payload = serializers.serialize(
-            "json",
-            Achievement.objects.filter(pk=achievement.pk),
-        )
-
+    def test_achievement_page_defers_data_loading_to_javascript(self):
         with patch("main.views.get_achievements_json") as get_json:
-            get_json.return_value = HttpResponse(
-                payload,
-                content_type="application/json",
-            )
             response = self.client.get(reverse("main:show_achievements"))
-
-        get_json.assert_called_once()
-        self.assertContains(response, achievement.title)
-        self.assertContains(response, achievement.result)
+        get_json.assert_not_called()
+        self.assertContains(response, f'data-endpoint="{reverse("main:get_achievements_json")}"')
+        self.assertContains(response, 'id="achievement-card-template"')
+        self.assertContains(response, '/static/js/achievements.js')
 
 
 class ProjectDeleteViewTest(SuperuserClientMixin, TestCase):
@@ -1027,7 +1003,7 @@ class ExperiencePageTest(TestCase):
                     f'href="{reverse("main:show_experiences_id")}"',
                 )
 
-    def test_experience_page_renders_experience_from_database(self):
+    def test_experience_api_delivers_database_data_for_cards(self):
         experience = Experience.objects.create(
             title="Teaching Assistant, Intro to Digital System",
             organization="Faculty of Computer Science, University of Indonesia",
@@ -1036,12 +1012,13 @@ class ExperiencePageTest(TestCase):
             start_year=2026,
         )
 
-        response = self.client.get(reverse("main:show_experiences"))
-
-        self.assertContains(response, experience.title)
-        self.assertContains(response, experience.organization)
-        self.assertContains(response, experience.description)
-        self.assertContains(response, "2026 — present")
+        payload = self.client.get(reverse("main:get_experiences_json")).json()
+        fields = next(item["fields"] for item in payload if item["pk"] == experience.pk)
+        self.assertEqual(fields["title"], experience.title)
+        self.assertEqual(fields["organization"], experience.organization)
+        self.assertEqual(fields["description"], experience.description)
+        self.assertEqual(fields["start_year"], 2026)
+        self.assertIsNone(fields["end_year"])
 
     def test_indonesian_experience_page_uses_translated_data(self):
         experience = Experience.objects.create(
@@ -1058,9 +1035,12 @@ class ExperiencePageTest(TestCase):
         response = self.client.get(reverse("main:show_experiences_id"))
 
         self.assertContains(response, 'lang="id"')
-        self.assertContains(response, experience.title_id)
-        self.assertContains(response, experience.organization_id)
-        self.assertContains(response, experience.description_id)
+        self.assertEqual(response.context["copy"]["language"], "id")
+        payload = self.client.get(reverse("main:get_experiences_json")).json()
+        fields = next(item["fields"] for item in payload if item["pk"] == experience.pk)
+        self.assertEqual(fields["title_id"], experience.title_id)
+        self.assertEqual(fields["organization_id"], experience.organization_id)
+        self.assertEqual(fields["description_id"], experience.description_id)
         self.assertNotContains(response, experience.description)
 
     def test_homepage_does_not_duplicate_experience_cards(self):
@@ -1227,7 +1207,7 @@ class AchievementPageTest(TestCase):
         self.assertTemplateUsed(response, "achievements.html")
         self.assertTemplateUsed(response, "base.html")
 
-    def test_achievement_page_renders_database_data_in_display_order(self):
+    def test_achievement_api_delivers_database_data_in_display_order(self):
         second_achievement = Achievement.objects.create(
             title="AMO",
             result="Bronze medal",
@@ -1243,17 +1223,13 @@ class AchievementPageTest(TestCase):
             display_order=1,
         )
 
-        response = self.client.get(reverse("main:show_achievements"))
-        content = response.content.decode()
-
-        self.assertContains(response, first_achievement.title)
-        self.assertContains(response, first_achievement.result)
-        self.assertContains(response, first_achievement.category)
-        self.assertContains(response, str(first_achievement.year))
-        self.assertLess(
-            content.index(first_achievement.title),
-            content.index(second_achievement.title),
-        )
+        payload = self.client.get(reverse("main:get_achievements_json")).json()
+        self.assertEqual([item["pk"] for item in payload], [first_achievement.pk, second_achievement.pk])
+        fields = payload[0]["fields"]
+        self.assertEqual(fields["title"], first_achievement.title)
+        self.assertEqual(fields["result"], first_achievement.result)
+        self.assertEqual(fields["category"], first_achievement.category)
+        self.assertEqual(fields["year"], first_achievement.year)
 
     def test_indonesian_achievement_page_uses_translated_data(self):
         achievement = Achievement.objects.create(
@@ -1268,8 +1244,11 @@ class AchievementPageTest(TestCase):
         response = self.client.get(reverse("main:show_achievements_id"))
 
         self.assertContains(response, 'lang="id"')
-        self.assertContains(response, achievement.title_id)
-        self.assertContains(response, achievement.result_id)
+        self.assertEqual(response.context["copy"]["language"], "id")
+        payload = self.client.get(reverse("main:get_achievements_json")).json()
+        fields = next(item["fields"] for item in payload if item["pk"] == achievement.pk)
+        self.assertEqual(fields["title_id"], achievement.title_id)
+        self.assertEqual(fields["result_id"], achievement.result_id)
         self.assertNotContains(response, achievement.result)
 
     def test_achievement_page_shows_empty_state_without_data(self):
@@ -1509,22 +1488,30 @@ class PortfolioAuthorizationTest(TestCase):
                         self.assertEqual(fields["star_url"], section["star"])
                         continue
 
+                    prefix = "experience" if section["model"] is Experience else "achievement"
+                    modal_target = f'popovertarget="add-{prefix}-modal"'
                     if can_create:
-                        self.assertContains(response, f'href="{section["create"]}"')
+                        self.assertContains(response, modal_target)
                     else:
-                        self.assertNotContains(response, f'href="{section["create"]}"')
-
+                        self.assertNotContains(response, modal_target)
+                    edit_class = f"{prefix}-edit"
+                    delete_class = f"{prefix}-delete"
                     if can_update:
-                        self.assertContains(response, f'href="{section["update"]}"')
+                        self.assertContains(response, edit_class)
                     else:
-                        self.assertNotContains(response, f'href="{section["update"]}"')
-
+                        self.assertNotContains(response, edit_class)
                     if can_delete:
-                        self.assertContains(response, f'action="{section["delete"]}"')
+                        self.assertContains(response, f"button-danger {delete_class}")
                     else:
-                        self.assertNotContains(response, f'action="{section["delete"]}"')
-
-                    self.assertContains(response, f'action="{section["star"]}"')
+                        self.assertNotContains(response, f"button-danger {delete_class}")
+                    api_response = self.client.get(reverse(f"main:get_{prefix}s_json"))
+                    fields = next(item["fields"] for item in api_response.json() if item["pk"] == section["pk"])
+                    self.assertEqual(fields["can_update"], can_update)
+                    self.assertEqual(fields["can_delete"], can_delete)
+                    self.assertEqual(fields["update_url"], section["update"])
+                    self.assertEqual(fields["delete_url"], section["delete"])
+                    self.assertEqual(fields["star_url"], section["star"])
+                    self.assertContains(response, 'class="star-form"')
 
 
 class PortfolioStarTest(TestCase):
@@ -1608,24 +1595,12 @@ class PortfolioStarTest(TestCase):
         csrf_client = Client(enforce_csrf_checks=True)
         csrf_client.force_login(self.user)
 
-        for item, star_url, page_url, _ in self.targets:
+        for item, star_url, page_url, json_url in self.targets:
             with self.subTest(model=item._meta.label):
                 page_response = csrf_client.get(page_url)
-                if isinstance(item, Project):
-                    api_response = csrf_client.get(
-                        reverse("main:get_projects_json")
-                    )
-                    serialized_item = next(
-                        entry
-                        for entry in api_response.json()
-                        if entry["pk"] == item.pk
-                    )
-                    self.assertEqual(
-                        serialized_item["fields"]["star_url"],
-                        star_url,
-                    )
-                else:
-                    self.assertContains(page_response, f'action="{star_url}"')
+                api_response = csrf_client.get(json_url)
+                serialized_item = next(entry for entry in api_response.json() if entry["pk"] == item.pk)
+                self.assertEqual(serialized_item["fields"]["star_url"], star_url)
                 self.assertContains(page_response, "csrfmiddlewaretoken")
                 self.assertEqual(csrf_client.post(star_url).status_code, 403)
                 self.assertFalse(item.starred_by.filter(pk=self.user.pk).exists())
