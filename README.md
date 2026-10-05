@@ -338,7 +338,6 @@ mengubah objek tersebut menjadi representasi teks yang dapat dikirim melalui
 jaringan, dibaca oleh aplikasi lain, dan direkonstruksi kembali melalui proses
 deserialization.
 
-
 ## Implementasi Tugas 4
 
 Tugas 4 menambahkan autentikasi, session, cookie, authorization, dan fitur star
@@ -365,6 +364,78 @@ redirect login, respons 403, penolakan metode GET pada endpoint mutatif,
 perlindungan CSRF, toggle star ketiga model, dan natural foreign keys. Seluruh
 91 test lulus pada verifikasi akhir Tugas 4.
 
+### Tugas 5
+
+### 1. Jelaskan apa itu debouncing dan mengapa teknik ini penting diterapkan pada fitur pencarian yang menggunakan AJAX!
+
+Debouncing adalah teknik menunda pemanggilan fungsi sampai tidak ada input baru
+selama jeda tertentu. Pada pencarian Experience dan Achievement, setiap event
+`input` membatalkan timer sebelumnya dengan `clearTimeout`, lalu memasang timer
+baru menggunakan `setTimeout` selama 300 ms. Jika saya mengetik beberapa huruf
+secara cepat, request pencarian baru dikirim setelah saya berhenti mengetik
+selama jeda tersebut, bukan pada setiap huruf.
+
+Teknik ini mengurangi request HTTP dan query database yang tidak diperlukan,
+sehingga server tidak perlu memproses semua kata kunci sementara. Antarmuka juga
+tidak terlalu sering berganti ke loading state. Pada proyek ini, submit form
+pencarian tetap menjalankan pencarian langsung tanpa menunggu timer.
+
+Debouncing tidak dengan sendirinya menjamin urutan respons. Request lama bisa
+selesai setelah request yang lebih baru. Karena itu, implementasi juga memakai
+`AbortController` untuk membatalkan request sebelumnya dan memeriksa controller
+aktif sebelum menampilkan hasil, agar respons lama tidak menimpa hasil terbaru.
+
+### 2. Jelaskan fungsi dari penggunaan `await` ketika kita menggunakan `fetch()`! Apa yang akan terjadi jika kita tidak menggunakan `await`?
+
+`fetch()` mengembalikan `Promise`, bukan langsung objek `Response`. Di dalam
+fungsi `async`, `await fetch(url)` menunda kelanjutan fungsi tersebut sampai
+Promise selesai sehingga hasilnya dapat dipakai untuk memeriksa status HTTP.
+`await` tidak memblokir seluruh browser; event loop tetap dapat menangani
+interaksi lain selama request berlangsung.
+
+Pada proyek ini, setelah menerima respons, saya juga menggunakan
+`await response.json()` karena pembacaan dan parsing body JSON mengembalikan
+Promise. Setelah data tersedia, kartu baru diisi dan loading state diganti
+dengan daftar atau empty state. Pada penambahan data, respons server diperiksa
+sebelum modal ditutup dan daftar dimuat kembali.
+
+Jika `await` dihapus tanpa mengganti cara penanganan Promise, variabel respons
+masih berisi Promise. Pemanggilan seperti `response.json()` akan gagal karena
+Promise tidak memiliki method tersebut, dan proses berikutnya bisa berjalan
+sebelum datanya tersedia. Bukan berarti request tidak dikirim: tanpa `await`,
+kita tetap dapat menangani hasilnya memakai `.then()` dan `.catch()`.
+
+Saya juga memeriksa `response.ok` atau status respons, karena `fetch()` tidak
+otomatis menolak Promise hanya karena server mengembalikan HTTP 400 atau 403.
+Status tersebut perlu ditangani agar pesan validasi atau kegagalan ditampilkan
+dengan benar.
+
+### 3. Jelaskan apa itu serangan XSS (Cross-Site Scripting) dan mengapa data yang ditampilkan melalui AJAX/JavaScript lebih rentan terhadap serangan ini daripada data yang ditampilkan langsung melalui template Django!
+
+XSS adalah serangan ketika input yang tidak dipercaya ditafsirkan sebagai kode
+aktif oleh browser, sehingga penyerang dapat menjalankan JavaScript dalam
+konteks situs. Contohnya, input berupa tag `img` dengan atribut `onerror` dapat
+menjalankan kode saat gambar gagal dimuat jika input itu disisipkan sebagai HTML.
+
+Template Django secara default melakukan autoescaping pada variabel. Karakter
+seperti `<` dan `>` diubah menjadi representasi aman sehingga input tidak
+langsung menjadi tag HTML. Sebaliknya, data JSON yang diterima melalui AJAX
+tidak otomatis mendapat perlindungan template tersebut saat dimasukkan ke DOM.
+Jika JavaScript menggabungkan data ke `innerHTML` tanpa escaping, browser akan
+mem-parsing-nya sebagai HTML dan dapat menjalankan payload berbahaya.
+
+Jadi, AJAX sendiri bukan penyebab XSS; risikonya berasal dari cara data
+ditampilkan. Pada Experience dan Achievement, saya mengisi judul, deskripsi
+atau hasil, kategori, dan teks lainnya dengan `textContent`, bukan mem-parsing
+input sebagai HTML. Di server, `ModelForm` memakai `strip_tags` pada field teks
+dan menolak field wajib yang menjadi kosong setelah dibersihkan.
+
+`strip_tags` merupakan lapisan tambahan untuk kebutuhan input teks biasa,
+bukan jaminan bahwa hasilnya aman dimasukkan ke `innerHTML`. Rendering aman tetap
+diperlukan. Template Django juga dapat rentan jika autoescaping dimatikan atau
+data tidak dipercaya diberi filter `safe`; perlindungan harus mengikuti konteks
+tempat data dipakai.
+
 ## Progres pengembangan
 
 | Periode | Fokus | Hasil |
@@ -377,7 +448,7 @@ perlindungan CSRF, toggle star ketiga model, dan natural foreign keys. Seluruh
 | 11–14 September 2026 | Implementasi MVT | Model, migrasi, seed data, halaman daftar bilingual, navigasi, dan test untuk data portofolio dinamis. |
 | 14–19 September 2026 | Form dan data delivery | Root template bersama, halaman Experience terpisah, ModelForm, create, update, delete, modal konfirmasi, endpoint JSON, deserialisasi data, serta test untuk Experience, Project, dan Achievement. |
 | 19–28 September 2026 | Authentication dan authorization | Register, login, logout, session, cookie, empat peran akses, star/unstar untuk Experience, Project, dan Achievement, natural foreign keys, serta test authorization dan star. |
-| Tugas 5; verifikasi 5 Oktober 2026 | Interaktivitas AJAX | Daftar JSON manual, pencarian debounce, loading/empty/error/retry, modal tambah AJAX, CSRF, sanitasi, toast, dan refresh tanpa reload untuk Experience dan Achievement. Full suite lulus 114/114 test; refleksi Tugas 5 belum ditambahkan. |
+| Tugas 5; verifikasi 5 Oktober 2026 | Interaktivitas AJAX | Daftar JSON manual, pencarian debounce, loading/empty/error/retry, modal tambah AJAX, CSRF, sanitasi, toast, dan refresh tanpa reload untuk Experience dan Achievement. Full suite lulus 114/114 test; tiga refleksi tentang debouncing, await, dan XSS ditambahkan. |
 
 ## AI disclosure
 
@@ -396,6 +467,9 @@ Untuk Tugas 5, AI membantu mengadaptasi pola Tutorial 5 untuk Experience dan
 Achievement: JSON manual, pencarian debounce, DOM rendering, modal tambah,
 validasi/sanitasi, CSRF, authorization, dan toast. AI menulis perubahan
 implementasi serta memperbarui test lama dan menambahkan 21 test AJAX.
+AI juga membantu menyusun draf tiga jawaban refleksi Tugas 5 berdasarkan
+pertanyaan resmi dan implementasi proyek; draf tersebut perlu saya tinjau
+agar sesuai dengan pemahaman saya.
 Pemeriksaan browser dilakukan dengan Chrome headless berprofil sementara,
 bukan dengan mengontrol browser pribadi tanpa izin. Data sementara pada
 pengecekan dikembalikan melalui rollback atau dibersihkan sesudahnya.
