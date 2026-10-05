@@ -2,7 +2,8 @@
 
 Proyek portofolio pribadi bilingual yang menggunakan Django dan pola
 Model-View-Template (MVT). Data pengalaman, proyek, keahlian, dan pencapaian
-disimpan dalam model Django dan dirender melalui template HTML.
+disimpan dalam model Django. Halaman Experience, Projects, dan Achievements
+memuat kartu melalui AJAX, sedangkan Skills dirender melalui template HTML.
 
 > Nama: Maximus Quinn Hertada
 >
@@ -31,14 +32,27 @@ disimpan dalam model Django dan dirender melalui template HTML.
   - `/api/experiences/`
   - `/api/projects/`
   - `/api/achievements/`
-- Halaman daftar Experience, Project, dan Achievement menampilkan objek yang
-  telah melalui proses serialisasi dan deserialisasi JSON.
-- Relasi pengguna pada respons JSON menggunakan natural foreign keys agar
-  direpresentasikan dengan username, bukan primary key internal.
+- Halaman daftar Experience, Project, dan Achievement memuat data dengan `fetch`
+  dari endpoint JSON manual menggunakan `JsonResponse`, lalu menampilkan kartu
+  tanpa reload. Respons menyertakan jumlah star, status star pengguna, URL aksi,
+  dan izin update/delete.
+- Pencarian Experience berdasarkan posisi atau organisasi, dan Achievement
+  berdasarkan judul atau hasil, mencakup field English/Indonesia. Keduanya
+  menggunakan debounce 300 ms; Projects menyediakan pencarian judul.
+- Loading, empty, dan error state serta tombol retry tersedia pada daftar AJAX.
+- Superuser dapat menambahkan Experience, Project, dan Achievement melalui modal
+  AJAX dengan CSRF, validasi server-side, toast sukses/gagal, dan refresh daftar
+  tanpa reload. Experience dan Achievement juga menampilkan error per field.
+- Input teks Experience dan Achievement dibersihkan dengan `strip_tags`, lalu
+  dirender menggunakan `textContent`. Field teks wajib yang menjadi kosong
+  setelah sanitasi ditolak. Validasi mencakup rentang tahun 1900–2100,
+  urutan tahun Experience, serta urutan tampilan Achievement tidak negatif.
+- Relasi pengguna pada respons JSON direpresentasikan dengan username, bukan
+  primary key internal, termasuk daftar natural keys `starred_by`.
 - Template memakai `base.html` sebagai root template bersama agar struktur
   navigasi, metadata, theme toggle, message, dan footer tidak diduplikasi.
-- Data portofolio dirender menggunakan Django Template Language, lengkap dengan
-  pesan kondisi kosong ketika belum ada data.
+- Django Template Language menyediakan kerangka halaman, kontrol sesuai role,
+  form, dan template kartu; JavaScript mengisi kartu daftar AJAX dengan data API.
 - Navigasi antarkomponen menggunakan named URL Django dan menu hamburger
   responsif pada layar kecil.
 - Tema gelap sebagai default, dengan toggle light mode berbasis CSS.
@@ -53,6 +67,7 @@ disimpan dalam model Django dan dirender melalui template HTML.
 - Python dan Django
 - HTML5 semantik
 - CSS3 murni
+- JavaScript vanilla, Fetch API, dan DOM API
 
 ## Menjalankan proyek secara lokal
 
@@ -102,7 +117,25 @@ admin, tetapi pemeriksaan akses utama pada view mengikuti matriks berikut.
 Halaman daftar tetap dapat dibaca tanpa login. Aksi yang membutuhkan autentikasi
 mengarahkan guest ke halaman login. User terautentikasi yang tidak mempunyai
 hak menerima respons HTTP 403. Endpoint star/unstar dan delete hanya menerima
-request POST serta dilindungi CSRF.
+request POST serta dilindungi CSRF. Khusus endpoint tambah AJAX, guest, user
+biasa, dan Editor menerima JSON HTTP 403, bukan redirect login. Endpoint ini
+tidak memakai `csrf_exempt`; POST tanpa token CSRF yang valid tetap ditolak.
+
+### Menggunakan daftar dan modal AJAX
+
+1. Buka `/experience/` atau `/achievements/`; JavaScript memuat daftar melalui API.
+   Versi Indonesia tersedia dengan awalan `/id/`.
+2. Ketik kata kunci pada kolom pencarian. Request dikirim setelah jeda 300 ms
+   sejak input terakhir, atau langsung saat form pencarian disubmit.
+3. Jika pemuatan gagal, gunakan **Try again / Coba lagi**. Pencarian yang tidak
+   cocok menampilkan pesan tersendiri, bukan error jaringan.
+4. Login sebagai superuser, lalu tekan **Add Experience / Add Achievement** untuk
+   membuka modal. Isi form dan submit; error server muncul di bawah field dan
+   pada toast. Saat berhasil, modal ditutup, form direset, dan daftar dimuat ulang
+   dengan kata kunci yang masih aktif, tanpa reload halaman.
+
+Edit, delete, dan star tetap memakai alur halaman/form POST yang sudah ada;
+ketiganya belum diubah menjadi AJAX. Halaman daftar AJAX membutuhkan JavaScript.
 
 ## Struktur proyek
 
@@ -113,6 +146,7 @@ MaxPorto/
 │   ├── forms.py            # ModelForm Project, Experience, dan Achievement
 │   ├── models.py           # Model Project, Experience, Skill, dan Achievement
 │   ├── tests.py            # Test model, auth, authorization, star, dan view
+│   ├── test_ajax.py        # Test kontrak AJAX Experience dan Achievement
 │   ├── urls.py             # Named URL halaman, auth, CRUD, star, dan API JSON
 │   └── views.py            # Auth, authorization, CRUD, star, dan data delivery
 ├── portofolio/
@@ -121,9 +155,10 @@ MaxPorto/
 │   └── views.py            # View dan context homepage
 ├── static/
 │   ├── css/style.css       # Tema, layout, responsivitas, dan komponen UI
-│   └── img/                # Foto dan ikon lokal
+│   ├── img/                # Foto dan ikon lokal
+│   └── js/                 # Loader/search/modal Experience, Achievement, toast
 ├── templates/
-│   ├── components/         # Komponen modal delete dan tombol star
+│   ├── components/         # Modal tambah/delete, tombol star, dan toast
 │   ├── base.html           # Root template bersama
 │   ├── index.html          # Homepage dan hero
 │   ├── experiences.html    # Daftar Experience
@@ -138,10 +173,13 @@ MaxPorto/
 └── manage.py
 ```
 
-Konten antarmuka bilingual disimpan dalam kamus copy pada view. Data portofolio
-diambil dari model melalui QuerySet, diserialisasi menjadi JSON, lalu
-dideserialisasi kembali menjadi objek model sebelum dimasukkan ke context dan
-dirender menggunakan perulangan serta kondisi Django Template Language.
+Konten antarmuka bilingual disimpan dalam kamus copy pada view. Untuk daftar
+AJAX, view mengambil QuerySet, menyusun dictionary/list berisi field model,
+informasi star, dan izin aksi, kemudian mengirimnya dengan `JsonResponse`.
+Browser memanggil `fetch`, membaca `response.json()`, dan mengisi kartu pada DOM.
+Experience dan Achievement memakai template kartu yang dikloning dan diisi
+dengan `textContent`; data tidak dideserialisasi kembali menjadi model di view
+halaman. `ModelForm` tetap menjadi sumber validasi dan penyimpanan data.
 
 ## Pertanyaan reflektif
 
@@ -237,6 +275,9 @@ class Project(models.Model):
 Setelah mengubah models.py, jalankan makemigrations dan migrate. Django akan mengeksekusi migrasi tersebut sehingga tabel Project di database benar-benar memiliki kolom created_at. Jika hanya menjalankan makemigrations, file rencana perubahan sudah ada, tetapi database belum berubah. Jika mencoba menggunakan field created_at sebelum menjalankan migrate, aplikasi dapat mengalami error karena kolom tersebut belum tersedia di database.
 
 ### Tugas 3
+
+Jawaban berikut menjelaskan implementasi saat Tugas 3. Pada Tugas 5, alur daftar
+beralih dari serialization/deserialization server-side ke JSON manual dan AJAX.
 
 ### 1. Jelaskan mengapa kita menggunakan `ModelForm` pada Django alih-alih membuat form HTML secara manual. Selain itu, jelaskan pula mengapa kita diwajibkan menambahkan `{% csrf_token %}` pada form tersebut!
 
@@ -336,29 +377,54 @@ perlindungan CSRF, toggle star ketiga model, dan natural foreign keys. Seluruh
 | 11–14 September 2026 | Implementasi MVT | Model, migrasi, seed data, halaman daftar bilingual, navigasi, dan test untuk data portofolio dinamis. |
 | 14–19 September 2026 | Form dan data delivery | Root template bersama, halaman Experience terpisah, ModelForm, create, update, delete, modal konfirmasi, endpoint JSON, deserialisasi data, serta test untuk Experience, Project, dan Achievement. |
 | 19–28 September 2026 | Authentication dan authorization | Register, login, logout, session, cookie, empat peran akses, star/unstar untuk Experience, Project, dan Achievement, natural foreign keys, serta test authorization dan star. |
+| Tugas 5; verifikasi 5 Oktober 2026 | Interaktivitas AJAX | Daftar JSON manual, pencarian debounce, loading/empty/error/retry, modal tambah AJAX, CSRF, sanitasi, toast, dan refresh tanpa reload untuk Experience dan Achievement. Full suite lulus 114/114 test; refleksi Tugas 5 belum ditambahkan. |
 
 ## AI disclosure
 
 ### Cara AI digunakan
 
 Saya menggunakan Hermes Agent sebagai asisten pengembangan lokal. AI membantu
-menjelaskan pola MVT, autentikasi, session, cookie, authorization, dan relasi
-many-to-many; menyarankan struktur model dan route; menyiapkan perubahan kode
+menjelaskan pola MVT, autentikasi, session, cookie, authorization, relasi
+many-to-many, serta alur AJAX dengan Fetch API; menyarankan struktur model dan route; menyiapkan perubahan kode
 dan test; serta menjalankan pemeriksaan teknis seperti `python manage.py check`
 dan `python manage.py test`. Pengembangan dilakukan secara bertahap:
 setiap bagian diimplementasikan dan diuji secara terpisah, kemudian hasilnya
 saya tinjau sebelum di-commit. Keputusan fitur, pemilihan konten, aset gambar,
 dan perubahan akhir tetap berada pada saya sebagai pemilik proyek.
 
+Untuk Tugas 5, AI membantu mengadaptasi pola Tutorial 5 untuk Experience dan
+Achievement: JSON manual, pencarian debounce, DOM rendering, modal tambah,
+validasi/sanitasi, CSRF, authorization, dan toast. AI menulis perubahan
+implementasi serta memperbarui test lama dan menambahkan 21 test AJAX.
+Pemeriksaan browser dilakukan dengan Chrome headless berprofil sementara,
+bukan dengan mengontrol browser pribadi tanpa izin. Data sementara pada
+pengecekan dikembalikan melalui rollback atau dibersihkan sesudahnya.
+
+Pada verifikasi tahap test, seluruh 114 test Django lulus. Pengecekan browser
+kedua model mencakup debounce, error/retry, modal, toast, submit ganda, refresh
+tanpa reload, dan viewport mobile. Pengujian ini tidak menjamin semua bug atau
+perbedaan lingkungan deployment sudah teratasi. Saya mengelola branch, merge,
+dan commit; AI tidak membuat commit pada tahap Tugas 5 ini.
+
 ### Chat history
 
-Riwayat percakapan yang tersimpan selama pengembangan Tugas 2 sampai Tugas 4
+Riwayat percakapan yang tersimpan selama pengembangan Tugas 2 sampai Tugas 5
 tersedia di folder [`ai-chat-history/`](ai-chat-history/). Riwayat
 Tugas 3 diekspor dari sesi Hermes Agent ke
 [`20260919_072342_16904e-activate-.venv-in-powershell-2.md`](ai-chat-history/20260919_072342_16904e-activate-.venv-in-powershell-2.md)
 dengan redaksi otomatis untuk informasi sensitif. Bagian pengembangan Tugas 4
 tersedia pada
 [`20260928_tugas-4-development.md`](ai-chat-history/20260928_tugas-4-development.md).
+
+Snapshot terbaru tersedia pada
+[`20261005_tugas-3-to-5-development.md`](ai-chat-history/20261005_tugas-3-to-5-development.md).
+Ekspor ini dimulai dari permintaan pengerjaan Tugas 3 pada 19 September 2026
+hingga waktu ekspor 5 Oktober 2026: 994 pesan asli dari 1.000 pesan yang diekspor,
+dengan enam pesan awal aktivasi virtual environment dikecualikan. Ekspor memakai
+redaksi otomatis dan penyamaran tambahan nilai kredensial. Riwayat lama tidak
+ditimpa, dan snapshot tidak mencakup percakapan setelah waktu ekspornya.
+Jumlah pesan, cakupan ekspor, serta checksum SHA-256 dicatat dalam
+[`manifest.jsonl`](ai-chat-history/manifest.jsonl).
 
 ### Keterbatasan AI
 
@@ -374,9 +440,10 @@ diambil dari resume, memilih sendiri informasi yang layak dipublikasikan, dan
 tidak memasukkan nomor telepon maupun alamat rumah ke dalam website. Saya juga
 meninjau hasil perubahan secara manual, termasuk ukuran dan alignment ikon,
 navigasi mobile, urutan konten, terjemahan, serta ukuran skill card ketika
-filter berubah. Implementasi sengaja tidak memakai JavaScript karena merupakan
-batasan tugas; solusi interaktif yang digunakan harus dapat dijelaskan dan
-ditinjau melalui HTML/CSS.
+filter berubah. Batasan tanpa JavaScript berlaku pada tahap awal tugas;
+pada Tutorial/Tugas 5, JavaScript digunakan untuk daftar, pencarian, modal, dan
+toast. Setiap perubahan tetap perlu ditinjau dan dipahami, bukan dianggap benar
+hanya karena dihasilkan AI atau lolos test.
 
 ### Pekerjaan manual
 
