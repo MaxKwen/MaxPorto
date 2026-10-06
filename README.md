@@ -139,36 +139,43 @@ ketiganya belum diubah menjadi AJAX. Halaman daftar AJAX membutuhkan JavaScript.
 
 ## Struktur proyek
 
+Panduan alur URL → view → template/CSS → AJAX ada di [ARCHITECTURE.md](ARCHITECTURE.md).
+
 ```text
 MaxPorto/
 ├── main/
-│   ├── migrations/         # Migrasi skema dan seed data portofolio
-│   ├── forms.py            # ModelForm Project, Experience, dan Achievement
-│   ├── models.py           # Model Project, Experience, Skill, dan Achievement
-│   ├── tests.py            # Test model, auth, authorization, star, dan view
-│   ├── test_ajax.py        # Test kontrak AJAX Experience dan Achievement
-│   ├── urls.py             # Named URL halaman, auth, CRUD, star, dan API JSON
-│   └── views.py            # Auth, authorization, CRUD, star, dan data delivery
-├── portofolio/
-│   ├── settings.py         # Konfigurasi proyek Django
-│   ├── urls.py             # URL proyek dan homepage bilingual
-│   └── views.py            # View dan context homepage
+│   ├── migrations/         # Skema dan seed data
+│   ├── copy.py             # Label/pesan bilingual fitur portofolio
+│   ├── permissions.py      # Pemeriksaan role Editor
+│   ├── forms.py            # ModelForm dan validasi
+│   ├── models.py           # Project, Experience, Skill, Achievement
+│   ├── tests.py            # Test model, auth, akses, star, dan view
+│   ├── test_ajax.py        # Test kontrak AJAX
+│   ├── test_structure.py   # Test template, stylesheet, dan modul view
+│   ├── urls.py             # Named URL halaman dan API
+│   └── views/
+│       ├── __init__.py     # Ekspor fungsi untuk main.views
+│       ├── auth.py
+│       ├── projects.py
+│       ├── experiences.py
+│       ├── achievements.py
+│       └── skills.py
+├── portofolio/             # Konfigurasi, root URL, dan view homepage
 ├── static/
-│   ├── css/style.css       # Tema, layout, responsivitas, dan komponen UI
+│   ├── css/                # base, components, forms, home, dan CSS tiap fitur
 │   ├── img/                # Foto dan ikon lokal
-│   └── js/                 # Loader/search/modal Experience, Achievement, toast
+│   └── js/                 # Experience, Achievement, dan toast
 ├── templates/
-│   ├── components/         # Modal tambah/delete, tombol star, dan toast
-│   ├── base.html           # Root template bersama
-│   ├── index.html          # Homepage dan hero
-│   ├── experiences.html    # Daftar Experience
-│   ├── experiences_form.html
-│   ├── projects.html       # Daftar Project
-│   ├── projects_form.html
-│   ├── skills.html         # Daftar Skill
-│   ├── achievements.html   # Daftar Achievement
-│   └── achievements_form.html
-├── ai-chat-history/        # Ekspor percakapan AI dengan redaksi otomatis
+│   ├── base.html           # Kerangka HTML bersama dan block page_css
+│   ├── components/         # Modal, star, toast, dan field form reusable
+│   ├── home/               # index.html
+│   ├── projects/           # list.html dan form.html
+│   ├── experiences/        # list.html dan form.html
+│   ├── achievements/       # list.html dan form.html
+│   ├── skills/             # list.html
+│   └── auth/               # login.html dan register.html
+├── ai-chat-history/
+├── ARCHITECTURE.md          # Panduan belajar struktur dan alur request
 ├── requirements.txt
 └── manage.py
 ```

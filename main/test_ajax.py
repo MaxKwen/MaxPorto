@@ -62,7 +62,7 @@ class PortfolioAjaxTest(TestCase):
         return next(item["fields"] for item in response.json() if item["pk"] == section["item"].pk)
 
     def test_public_json_is_manual_and_preserves_all_model_fields(self):
-        with patch("main.views.serializers.serialize", side_effect=AssertionError("Use manual JSON")):
+        with patch("django.core.serializers.serialize", side_effect=AssertionError("Use manual JSON")):
             for section in self.sections:
                 with self.subTest(model=section["prefix"]):
                     fields = self.fields_for(section)

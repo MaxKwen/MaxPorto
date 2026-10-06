@@ -1,6 +1,12 @@
 {% extends "base.html" %}
 {% load static %}
 
+{% block page_css %}
+  <link rel="stylesheet" href="{% static 'css/forms.css' %}" />
+  <link rel="stylesheet" href="{% static 'css/achievements.css' %}" />
+{% endblock page_css %}
+
+
 {% block title %}{{ copy.page_title }} - Maximus Quinn Hertada{% endblock title %}
 {% block meta_description %}{{ copy.meta_description }}{% endblock meta_description %}
 {% block body_class %}projects-body{% endblock body_class %}

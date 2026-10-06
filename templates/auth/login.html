@@ -1,9 +1,12 @@
 {% extends "base.html" %}
-{% block meta %}
-    <title>Login - {{ name }}</title>
-{% endblock meta %}
+{% load static %}
+
+{% block page_css %}
+  <link rel="stylesheet" href="{% static 'css/forms.css' %}" />
+{% endblock page_css %}
+
+{% block title %}Login - {{ name }}{% endblock title %}
 {% block content %}
-    <main>
         <section class="experience-section">
             <div class="container">
                 <h1>Login</h1>
@@ -29,5 +32,4 @@
                 <p>Belum punya akun? <a href="{% url 'main:register' %}">Daftar di sini</a>.</p>
             </div>
         </section>
-    </main>
 {% endblock content %}

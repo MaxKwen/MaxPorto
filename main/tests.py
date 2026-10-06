@@ -25,7 +25,7 @@ class ProjectPageTest(SuperuserClientMixin, TestCase):
         self.login_superuser()
 
     def test_project_page_css_allows_content_to_scroll(self):
-        css = (settings.BASE_DIR / "static" / "css" / "style.css").read_text()
+        css = (settings.BASE_DIR / "static" / "css" / "components.css").read_text()
         desktop_rule = css.split("@media (min-width: 1001px)", 1)[1].split(
             "@media", 1
         )[0]
@@ -37,7 +37,7 @@ class ProjectPageTest(SuperuserClientMixin, TestCase):
         response = self.client.get(reverse("main:show_projects"))
 
         self.assertEqual(response.status_code, 200)
-        self.assertTemplateUsed(response, "projects.html")
+        self.assertTemplateUsed(response, "projects/list.html")
         self.assertTemplateUsed(response, "base.html")
 
     def test_project_page_has_add_project_popover_button(self):
@@ -70,7 +70,7 @@ class ProjectPageTest(SuperuserClientMixin, TestCase):
     def test_homepage_uses_base_template(self):
         response = self.client.get(reverse("landing_page"))
 
-        self.assertTemplateUsed(response, "index.html")
+        self.assertTemplateUsed(response, "home/index.html")
         self.assertTemplateUsed(response, "base.html")
 
     def test_homepage_does_not_duplicate_project_cards(self):
@@ -355,7 +355,7 @@ class ExperienceCreateViewTest(SuperuserClientMixin, TestCase):
         response = self.client.get(reverse("main:create_experience"))
 
         self.assertEqual(response.status_code, 200)
-        self.assertTemplateUsed(response, "experiences_form.html")
+        self.assertTemplateUsed(response, "experiences/form.html")
         self.assertTemplateUsed(response, "base.html")
         self.assertIsInstance(response.context["form"], experience_form_class)
         self.assertContains(response, "csrfmiddlewaretoken")
@@ -404,7 +404,7 @@ class AchievementCreateViewTest(SuperuserClientMixin, TestCase):
         response = self.client.get(reverse("main:create_achievement"))
 
         self.assertEqual(response.status_code, 200)
-        self.assertTemplateUsed(response, "achievements_form.html")
+        self.assertTemplateUsed(response, "achievements/form.html")
         self.assertTemplateUsed(response, "base.html")
         self.assertIsInstance(response.context["form"], achievement_form_class)
         self.assertContains(response, "csrfmiddlewaretoken")
@@ -461,7 +461,7 @@ class ExperienceUpdateViewTest(SuperuserClientMixin, TestCase):
         )
 
         self.assertEqual(response.status_code, 200)
-        self.assertTemplateUsed(response, "experiences_form.html")
+        self.assertTemplateUsed(response, "experiences/form.html")
         self.assertIsInstance(response.context["form"], experience_form_class)
         self.assertEqual(response.context["form"].instance, self.experience)
         self.assertContains(response, "Update Experience")
@@ -505,9 +505,10 @@ class ExperienceUpdateViewTest(SuperuserClientMixin, TestCase):
         self.assertEqual(response.status_code, 404)
 
     def test_experience_card_aligns_actions_like_project_card(self):
-        css = (settings.BASE_DIR / "static" / "css" / "style.css").read_text()
+        css = (settings.BASE_DIR / "static" / "css" / "experiences.css").read_text()
+        shared_css = (settings.BASE_DIR / "static" / "css" / "components.css").read_text()
         experience_rule = css.split(".experience-card {", 1)[1].split("}", 1)[0]
-        edit_button_rule = css.split(".projects-page .project-link {", 1)[1].split(
+        edit_button_rule = shared_css.split(".projects-page .project-link {", 1)[1].split(
             "}", 1
         )[0]
 
@@ -543,7 +544,7 @@ class AchievementUpdateViewTest(SuperuserClientMixin, TestCase):
         )
 
         self.assertEqual(response.status_code, 200)
-        self.assertTemplateUsed(response, "achievements_form.html")
+        self.assertTemplateUsed(response, "achievements/form.html")
         self.assertIsInstance(response.context["form"], achievement_form_class)
         self.assertEqual(response.context["form"].instance, self.achievement)
         self.assertContains(response, "Update Achievement")
@@ -585,7 +586,7 @@ class AchievementUpdateViewTest(SuperuserClientMixin, TestCase):
         self.assertEqual(response.status_code, 404)
 
     def test_achievement_card_aligns_actions_like_project_card(self):
-        css = (settings.BASE_DIR / "static" / "css" / "style.css").read_text()
+        css = (settings.BASE_DIR / "static" / "css" / "achievements.css").read_text()
         achievement_rule = css.split(".achievement-card {", 1)[1].split("}", 1)[0]
 
         self.assertIn("display: flex", achievement_rule)
@@ -684,7 +685,7 @@ class ProjectCreateViewTest(SuperuserClientMixin, TestCase):
         response = self.client.get(reverse("main:create_project"))
 
         self.assertEqual(response.status_code, 200)
-        self.assertTemplateUsed(response, "projects_form.html")
+        self.assertTemplateUsed(response, "projects/form.html")
         self.assertIsInstance(response.context["form"], project_form_class)
         self.assertContains(response, "csrfmiddlewaretoken")
 
@@ -742,7 +743,7 @@ class ProjectUpdateViewTest(SuperuserClientMixin, TestCase):
         )
 
         self.assertEqual(response.status_code, 200)
-        self.assertTemplateUsed(response, "projects_form.html")
+        self.assertTemplateUsed(response, "projects/form.html")
         self.assertIsInstance(response.context["form"], project_form_class)
         self.assertEqual(response.context["form"].instance, self.project)
         self.assertContains(response, "Update Project")
@@ -970,7 +971,7 @@ class ExperiencePageTest(TestCase):
         response = self.client.get(reverse("main:show_experiences"))
 
         self.assertEqual(response.status_code, 200)
-        self.assertTemplateUsed(response, "experiences.html")
+        self.assertTemplateUsed(response, "experiences/list.html")
         self.assertTemplateUsed(response, "base.html")
 
     def test_navigation_links_to_matching_experience_pages(self):
@@ -1097,7 +1098,7 @@ class SkillPageTest(TestCase):
         response = self.client.get(reverse("main:show_skills"))
 
         self.assertEqual(response.status_code, 200)
-        self.assertTemplateUsed(response, "skills.html")
+        self.assertTemplateUsed(response, "skills/list.html")
         self.assertTemplateUsed(response, "base.html")
 
     def test_skill_page_renders_database_data_in_display_order(self):
@@ -1204,7 +1205,7 @@ class AchievementPageTest(TestCase):
         response = self.client.get(reverse("main:show_achievements"))
 
         self.assertEqual(response.status_code, 200)
-        self.assertTemplateUsed(response, "achievements.html")
+        self.assertTemplateUsed(response, "achievements/list.html")
         self.assertTemplateUsed(response, "base.html")
 
     def test_achievement_api_delivers_database_data_in_display_order(self):

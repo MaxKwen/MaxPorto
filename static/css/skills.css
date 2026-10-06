@@ -1,0 +1,134 @@
+/* Katalog, kartu, dan filter keahlian. */
+
+.skills-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+  margin-top: 2.5rem;
+}
+
+.skill-group {
+  padding: 1.3rem;
+  border: 1px solid var(--line);
+  border-radius: 1rem;
+  background: var(--surface);
+}
+
+.skill-group h3 {
+  color: var(--bright);
+  font-size: 1.15rem;
+}
+
+.skill-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.55rem;
+  margin-top: 1.2rem;
+}
+
+.skill-tags span {
+  padding: 0.35rem 0.6rem;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  color: var(--muted);
+  font-family: var(--mono);
+  font-size: 0.78rem;
+}
+
+.skills-catalog input {
+  position: absolute;
+  opacity: 0;
+}
+
+.skill-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  margin-top: 2rem;
+}
+
+.skill-filters label {
+  padding: 0.45rem 0.8rem;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  color: var(--muted);
+  cursor: pointer;
+}
+
+.skill-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, 10.6rem);
+  justify-content: start;
+  gap: 1.25rem;
+  margin-top: 1.25rem;
+}
+
+.skill-card {
+  display: grid;
+  height: 12rem;
+  place-items: center;
+  align-content: center;
+  gap: 0.9rem;
+  padding: 1rem;
+  border: 1px solid rgba(148, 191, 255, 0.48);
+  border-radius: 1rem;
+  background: linear-gradient(145deg, rgba(41, 82, 159, 0.52), var(--surface));
+  box-shadow: 0 0.8rem 2rem rgba(0, 0, 0, 0.16);
+  transition: transform 160ms ease, border-color 160ms ease, box-shadow 160ms ease;
+}
+
+.skill-card:hover {
+  transform: translateY(-4px);
+  border-color: var(--bright);
+  box-shadow: 0 1rem 2.5rem rgba(75, 141, 255, 0.2);
+}
+
+.skill-card img {
+  width: 3.2rem;
+  height: 3.2rem;
+  object-fit: contain;
+}
+
+.skill-card strong {
+  text-align: center;
+}
+
+.skills-page .skill-cards {
+  grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr));
+}
+
+.skills-page .skill-card {
+  height: 10.5rem;
+}
+
+.skills-page .empty-state {
+  grid-column: 1 / -1;
+  padding: 2rem;
+  border: 1px dashed var(--line);
+  border-radius: 1rem;
+  color: var(--muted);
+  text-align: center;
+}
+
+.skills-catalog:has(#filter-language:checked) .skill-card:not([data-category="language"]),
+.skills-catalog:has(#filter-tool:checked) .skill-card:not([data-category="tool"]),
+.skills-catalog:has(#filter-backend:checked) .skill-card:not([data-category="backend"]),
+.skills-catalog:has(#filter-frontend:checked) .skill-card:not([data-category="frontend"]) {
+  display: none;
+}
+
+.skills-catalog:has(#filter-all:checked) label[for="filter-all"],
+.skills-catalog:has(#filter-language:checked) label[for="filter-language"],
+.skills-catalog:has(#filter-tool:checked) label[for="filter-tool"],
+.skills-catalog:has(#filter-backend:checked) label[for="filter-backend"],
+.skills-catalog:has(#filter-frontend:checked) label[for="filter-frontend"] {
+  color: var(--bg);
+  border-color: var(--bright);
+  background: var(--bright);
+}
+
+@media (max-width: 760px) {
+  .skills-grid {
+    grid-template-columns: 1fr;
+  }
+}

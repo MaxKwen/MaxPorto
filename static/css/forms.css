@@ -1,0 +1,128 @@
+/* Form bersama untuk tambah/edit data serta login/register. */
+
+.project-form {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1.25rem;
+  max-width: 56rem;
+  margin-top: 2rem;
+  padding: clamp(1.25rem, 3vw, 2rem);
+  border: 1px solid rgba(148, 191, 255, 0.3);
+  border-radius: 1.25rem;
+  background: linear-gradient(145deg, rgba(41, 82, 159, 0.24), var(--surface));
+  box-shadow: 0 1.25rem 3.5rem rgba(0, 0, 0, 0.2);
+  backdrop-filter: blur(12px);
+}
+
+.form-group {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 0.55rem;
+}
+
+.form-group label {
+  color: var(--bright);
+  font-family: var(--mono);
+  font-size: 0.72rem;
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.form-group input:not([type="checkbox"]),
+.form-group textarea {
+  width: 100%;
+  border: 1px solid var(--line);
+  border-radius: 0.7rem;
+  padding: 0.8rem 0.9rem;
+  color: var(--text);
+  background: rgba(5, 10, 23, 0.48);
+  font: inherit;
+  line-height: 1.5;
+  transition: border-color 160ms ease, box-shadow 160ms ease, background-color 160ms ease;
+}
+
+body:has(#theme-toggle:checked) .form-group input:not([type="checkbox"]),
+body:has(#theme-toggle:checked) .form-group textarea {
+  background: rgba(255, 255, 255, 0.68);
+}
+
+.form-group textarea {
+  min-height: 8rem;
+  resize: vertical;
+}
+
+.form-group input::placeholder,
+.form-group textarea::placeholder {
+  color: var(--muted);
+  opacity: 0.72;
+}
+
+.form-group input:focus,
+.form-group textarea:focus {
+  border-color: var(--bright);
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(75, 141, 255, 0.2);
+}
+
+.form-group:has(input[type="checkbox"]) {
+  align-items: flex-start;
+  justify-content: flex-end;
+}
+
+.form-group input[type="checkbox"] {
+  width: 1.2rem;
+  height: 1.2rem;
+  margin: 0.2rem 0 0;
+  accent-color: var(--accent);
+  cursor: pointer;
+}
+
+.form-help,
+.form-error {
+  margin: 0;
+  font-size: 0.78rem;
+  line-height: 1.5;
+}
+
+.form-help {
+  color: var(--muted);
+}
+
+.form-error,
+.project-form .errorlist {
+  color: #ff8f8f;
+}
+
+.project-form .errorlist {
+  grid-column: 1 / -1;
+  margin: 0;
+  padding-left: 1.2rem;
+  font-size: 0.82rem;
+}
+
+.form-actions {
+  display: flex;
+  grid-column: 1 / -1;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-top: 0.25rem;
+  padding-top: 1.25rem;
+  border-top: 1px solid var(--line);
+}
+
+@media (max-width: 760px) {
+  .project-form {
+    grid-template-columns: 1fr;
+    padding: 1.1rem;
+  }
+
+  .form-actions {
+    grid-column: 1;
+  }
+
+  .form-actions .button {
+    width: 100%;
+  }
+}
