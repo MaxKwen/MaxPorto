@@ -60,7 +60,7 @@ class ProjectPageTest(SuperuserClientMixin, TestCase):
         self.assertContains(response, 'id="empty"')
         self.assertContains(response, 'id="grid"')
         self.assertContains(response, 'value="observatory"')
-        self.assertContains(response, reverse("main:get_projects_json"))
+        self.assertContains(response, reverse("api:project-list"))
 
     def test_homepage_links_to_project_page(self):
         response = self.client.get(reverse("landing_page"))

@@ -25,3 +25,8 @@ urlpatterns = [
     path('id/', landing_page, {'language': 'id'}, name='landing_page_id'),
     path('', include('main.urls')),
 ]
+
+urlpatterns += [
+    path('api/v1/', include('main.api_urls')),
+    path('api-auth/', include('rest_framework.urls')),
+]
