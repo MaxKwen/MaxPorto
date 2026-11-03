@@ -113,3 +113,5 @@ sftp-config.json
 
 # PWS Credential
 credential.txt
+# collectstatic output
+staticfiles/
