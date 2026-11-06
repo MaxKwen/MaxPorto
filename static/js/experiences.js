@@ -16,9 +16,66 @@
     grid,
   };
   const SEARCH_DEBOUNCE_DELAY = 300;
+  // Field yang dikirim ke serializer; token CSRF form tidak ikut sebagai data
+  const TEXT_FIELDS = [
+    "title", "title_id", "organization", "organization_id",
+    "description", "description_id", "category",
+  ];
+  const YEAR_FIELDS = ["start_year", "end_year"];
+  const experiencesById = new Map();
   let searchTimer;
   let activeController;
-  let addingExperience = false;
+
+  // ---------- Helper request API (CSRF + JSON + pesan error DRF) ----------
+
+  function getCookie(name) {
+    const prefix = `${name}=`;
+    const cookie = document.cookie.split(";").map((value) => value.trim())
+      .find((value) => value.startsWith(prefix));
+    return cookie ? decodeURIComponent(cookie.slice(prefix.length)) : null;
+  }
+
+  function endpointFor(pattern, id) {
+    return pattern.replace("/0/", `/${encodeURIComponent(id)}/`);
+  }
+
+  class ApiError extends Error {
+    constructor(message, status, data) {
+      super(message);
+      this.status = status;
+      this.data = data;
+    }
+  }
+
+  // Error DRF: {"field": ["..."]}, {"non_field_errors": [...]}, atau {"detail": "..."}
+  function apiErrorMessage(data, status) {
+    const messages = Object.values(data || {}).flat().filter((value) => typeof value === "string");
+    if (messages.length) return messages.join(" ");
+    return status === 403 ? copy.request_rejected : copy.add_error;
+  }
+
+  async function sendJson(url, method, payload) {
+    let response;
+    try {
+      response = await fetch(url, {
+        method,
+        headers: {
+          Accept: "application/json",
+          "Content-Type": "application/json",
+          "X-CSRFToken": getCookie("csrftoken") || "",
+        },
+        body: payload === undefined ? undefined : JSON.stringify(payload),
+      });
+    } catch (error) {
+      throw new ApiError(copy.connection_error, 0, null);
+    }
+    if (response.status === 204) return null;
+    const data = await response.json().catch(() => null);
+    if (!response.ok) throw new ApiError(apiErrorMessage(data, response.status), response.status, data);
+    return data;
+  }
+
+  // ---------- Daftar, pencarian, dan kartu ----------
 
   function showState(name) {
     Object.entries(states).forEach(([key, element]) => {
@@ -27,18 +84,18 @@
     grid.setAttribute("aria-busy", String(name === "loading"));
   }
 
-  function localizedValue(fields, name) {
-    return copy.language === "id" && fields[`${name}_id`]
-      ? fields[`${name}_id`]
-      : fields[name];
+  function localizedValue(experience, name) {
+    return copy.language === "id" && experience[`${name}_id`]
+      ? experience[`${name}_id`]
+      : experience[name];
   }
 
-  function buildExperienceCard(item) {
-    const experience = item.fields;
+  function buildExperienceCard(experience) {
     const card = cardTemplate.content.firstElementChild.cloneNode(true);
     const title = localizedValue(experience, "title");
+    card.dataset.id = experience.id;
 
-    // Keep user-supplied text out of HTML parsing, including labels and tooltips.
+    // Teks dari pengguna selalu lewat textContent, tidak pernah lewat innerHTML
     card.querySelector("h2").textContent = title;
     card.querySelector(".experience-period").textContent =
       `${experience.start_year} — ${experience.end_year ?? copy.present}`;
@@ -48,44 +105,20 @@
     card.querySelector(".experience-description").textContent =
       localizedValue(experience, "description");
 
-    const editLink = card.querySelector(".experience-edit");
-    if (editLink) {
-      if (experience.can_update) editLink.href = experience.update_url;
-      else editLink.remove();
-    }
-
+    const editButton = card.querySelector(".experience-edit");
+    if (editButton) editButton.setAttribute("aria-label", `${copy.edit_experience}: ${title}`);
     const deleteButton = card.querySelector(".experience-delete");
-    const deleteModal = card.querySelector(".project-delete-modal");
-    if (deleteButton && deleteModal) {
-      if (experience.can_delete) {
-        const modalId = `delete-experience-${item.pk}`;
-        deleteModal.id = modalId;
-        const heading = deleteModal.querySelector("h2");
-        heading.id = `${modalId}-title`;
-        deleteModal.setAttribute("aria-labelledby", heading.id);
-        deleteModal.querySelector("strong").textContent = title;
-        deleteModal.querySelector("form").action = experience.delete_url;
-        deleteModal.querySelectorAll("[popovertargetaction]").forEach((button) => {
-          button.setAttribute("popovertarget", modalId);
-        });
-        deleteButton.setAttribute("popovertarget", modalId);
-        deleteButton.setAttribute("aria-label", `${copy.delete_experience}: ${title}`);
-      } else {
-        deleteButton.remove();
-        deleteModal.remove();
-      }
-    }
+    if (deleteButton) deleteButton.setAttribute("aria-label", `${copy.delete_experience}: ${title}`);
 
-    const starForm = card.querySelector(".star-form");
-    const starButton = starForm.querySelector("button");
-    starForm.action = experience.star_url;
-    starButton.classList.toggle("is-starred", experience.is_starred);
-    starButton.title = experience.star_count > 0
+    const star = card.querySelector(".button-star");
+    star.classList.toggle("is-starred", experience.is_starred);
+    star.title = experience.star_count > 0
       ? `${copy.starred_by} ${experience.starred_by_names}`
       : copy.first_star;
-    starButton.querySelector(".star-label").textContent =
-      experience.is_starred ? copy.unstar : copy.star;
-    starButton.querySelector(".star-count").textContent = experience.star_count;
+    if (star.classList.contains("experience-star")) {
+      star.querySelector(".star-label").textContent = experience.is_starred ? copy.unstar : copy.star;
+    }
+    star.querySelector(".star-count").textContent = experience.star_count;
     return card;
   }
 
@@ -107,17 +140,15 @@
       if (!Array.isArray(items)) throw new Error("Invalid experience response");
       if (controller.signal.aborted || controller !== activeController) return;
 
+      experiencesById.clear();
+      items.forEach((item) => experiencesById.set(String(item.id), item));
       if (items.length === 0) {
         grid.replaceChildren();
-        emptyState.querySelector("p").textContent = query
-          ? copy.no_results
-          : copy.empty_state;
+        emptyState.querySelector("p").textContent = query ? copy.no_results : copy.empty_state;
         showState("empty");
         return;
       }
-
-      const cards = items.map(buildExperienceCard);
-      grid.replaceChildren(...cards);
+      grid.replaceChildren(...items.map(buildExperienceCard));
       showState("grid");
     } catch (error) {
       if (error.name === "AbortError" || controller !== activeController) return;
@@ -126,25 +157,32 @@
     }
   }
 
-  function searchExperiences() {
+  function refreshList() {
     clearTimeout(searchTimer);
-    fetchExperiences(searchInput.value.trim());
+    return fetchExperiences(searchInput.value.trim());
   }
 
   searchInput.addEventListener("input", () => {
     clearTimeout(searchTimer);
-    // Invalidate an in-flight result as soon as the query changes.
+    // Batalkan hasil lama begitu kata kunci berubah
     if (activeController) activeController.abort();
-    searchTimer = setTimeout(searchExperiences, SEARCH_DEBOUNCE_DELAY);
+    searchTimer = setTimeout(refreshList, SEARCH_DEBOUNCE_DELAY);
   });
   searchForm.addEventListener("submit", (event) => {
     event.preventDefault();
-    searchExperiences();
+    refreshList();
   });
-  retryButton.addEventListener("click", searchExperiences);
+  retryButton.addEventListener("click", refreshList);
 
+  // ---------- Modal tambah (POST) dan edit (PATCH) ----------
+
+  const formModal = document.getElementById("experience-form-modal");
   const experienceForm = document.getElementById("experience-form");
-  const addModal = document.getElementById("add-experience-modal");
+  const formTitle = document.getElementById("experience-form-title");
+  const addButton = document.getElementById("experience-add-button");
+  const submitButton = experienceForm?.querySelector('button[type="submit"]');
+  let editingId = null;
+  let saving = false;
 
   function clearFormErrors() {
     experienceForm.querySelectorAll("[data-error-for]").forEach((element) => {
@@ -158,72 +196,140 @@
     summary.classList.add("hide");
   }
 
+  // Tampilkan error per field dari serializer di bawah input masing-masing
   function displayFormErrors(errors) {
-    const messages = [];
-    Object.entries(errors).forEach(([name, fieldErrors]) => {
-      const text = fieldErrors.map((error) => error.message).join(" ");
+    Object.entries(errors || {}).forEach(([name, fieldErrors]) => {
+      const text = [].concat(fieldErrors).join(" ");
       const field = experienceForm.elements.namedItem(name);
-      const errorElement = Array.from(
-        experienceForm.querySelectorAll("[data-error-for]")
-      ).find((element) => element.dataset.errorFor === name);
+      const errorElement = experienceForm.querySelector(`[data-error-for="${CSS.escape(name)}"]`);
       if (field && errorElement) {
         field.setAttribute("aria-invalid", "true");
         errorElement.textContent = text;
-        messages.push(`${field.labels[0].textContent}: ${text}`);
       } else {
         const summary = document.getElementById("experience-form-errors");
         summary.textContent = text;
         summary.classList.remove("hide");
-        messages.push(text);
       }
     });
-    return messages.join(" ");
   }
 
-  async function addExperience(event) {
-    event.preventDefault();
-    if (addingExperience) return;
-
-    addingExperience = true;
+  function setMode(experience) {
+    editingId = experience ? String(experience.id) : null;
     clearFormErrors();
-    const submitButton = experienceForm.querySelector('button[type="submit"]');
+    experienceForm.reset();
+    if (experience) {
+      [...TEXT_FIELDS, ...YEAR_FIELDS].forEach((name) => {
+        const field = experienceForm.elements.namedItem(name);
+        if (field) field.value = experience[name] ?? "";
+      });
+    }
+    formTitle.textContent = experience ? copy.edit_heading : copy.add_heading;
+    submitButton.textContent = experience ? copy.save_changes : copy.add_experience;
+  }
+
+  function formPayload() {
+    const fields = new FormData(experienceForm);
+    const payload = {};
+    TEXT_FIELDS.forEach((name) => { payload[name] = fields.get(name) ?? ""; });
+    YEAR_FIELDS.forEach((name) => {
+      const value = String(fields.get(name) ?? "").trim();
+      payload[name] = value === "" ? null : Number(value);
+    });
+    return payload;
+  }
+
+  async function saveExperience(event) {
+    event.preventDefault();
+    if (saving) return;
+    saving = true;
+    clearFormErrors();
+    const isEdit = editingId !== null;
     submitButton.disabled = true;
-    submitButton.textContent = copy.adding;
+    submitButton.textContent = isEdit ? copy.saving : copy.adding;
 
     try {
-      // FormData includes the CSRF token rendered by Django in the modal.
-      const response = await fetch(experienceForm.action, {
-        method: "POST",
-        body: new FormData(experienceForm),
-        headers: { Accept: "application/json" },
-      });
-      const result = await response.json().catch(() => null);
-
-      if (response.status === 201 && result) {
-        experienceForm.reset();
-        addModal.hidePopover();
-        showToast(copy.add_success_title, result.message || copy.add_success, "success");
-        clearTimeout(searchTimer);
-        await fetchExperiences(searchInput.value.trim());
+      if (isEdit) {
+        await sendJson(endpointFor(page.dataset.detailEndpoint, editingId), "PATCH", formPayload());
       } else {
-        const message = result?.errors
-          ? displayFormErrors(result.errors)
-          : (result?.message || (response.status === 403 ? copy.request_rejected : copy.add_error));
-        showToast(copy.add_error_title, message || copy.add_error, "error");
+        await sendJson(page.dataset.endpoint, "POST", formPayload());
       }
+      formModal.hidePopover();
+      showToast(copy.add_success_title, isEdit ? copy.edit_success : copy.add_success, "success");
+      setMode(null);
+      await refreshList();
     } catch (error) {
-      console.error("Error adding experience:", error);
-      showToast(copy.add_error_title, copy.connection_error, "error");
+      // 400: error per field tetap terlihat di modal; 403/jaringan: cukup toast
+      if (error.status === 400) displayFormErrors(error.data);
+      showToast(isEdit ? copy.edit_error_title : copy.add_error_title, error.message, "error");
     } finally {
-      addingExperience = false;
+      saving = false;
       submitButton.disabled = false;
-      submitButton.textContent = copy.add_experience;
+      if (submitButton.textContent === copy.saving || submitButton.textContent === copy.adding) {
+        submitButton.textContent = editingId !== null ? copy.save_changes : copy.add_experience;
+      }
     }
   }
 
-  // The modal is deliberately absent for guests, ordinary users, and Editors.
-  if (experienceForm && addModal) {
-    experienceForm.addEventListener("submit", addExperience);
+  if (experienceForm && formModal) {
+    experienceForm.addEventListener("submit", saveExperience);
+    // Tombol tambah membuka modal yang sama dalam mode tambah
+    if (addButton) addButton.addEventListener("click", () => setMode(null));
   }
-  searchExperiences();
+
+  // ---------- Hapus (DELETE) dengan modal konfirmasi ----------
+
+  const deleteModal = document.getElementById("experience-delete-modal");
+  const deleteConfirm = document.getElementById("experience-delete-confirm");
+  let deletingId = null;
+
+  if (deleteModal && deleteConfirm) {
+    deleteConfirm.addEventListener("click", async () => {
+      if (deletingId === null || deleteConfirm.disabled) return;
+      deleteConfirm.disabled = true;
+      try {
+        await sendJson(endpointFor(page.dataset.detailEndpoint, deletingId), "DELETE");
+        deleteModal.hidePopover();
+        showToast(copy.add_success_title, copy.delete_success, "success");
+        await refreshList();
+      } catch (error) {
+        showToast(copy.delete_error_title, error.message, "error");
+      } finally {
+        deleteConfirm.disabled = false;
+        deletingId = null;
+      }
+    });
+  }
+
+  // ---------- Event delegation untuk tombol di kartu ----------
+
+  grid.addEventListener("click", async (event) => {
+    const button = event.target.closest("button");
+    const card = button?.closest(".experience-card");
+    if (!button || !card || button.disabled) return;
+    const experience = experiencesById.get(card.dataset.id);
+    if (!experience) return;
+
+    if (button.classList.contains("experience-edit") && formModal) {
+      setMode(experience);
+      formModal.showPopover();
+    } else if (button.classList.contains("experience-delete") && deleteModal) {
+      deletingId = String(experience.id);
+      document.getElementById("experience-delete-name").textContent =
+        localizedValue(experience, "title");
+      deleteModal.showPopover();
+    } else if (button.classList.contains("experience-star")) {
+      // Toggle: tombol dikunci selama request agar tidak terkirim dua kali
+      button.disabled = true;
+      try {
+        const updated = await sendJson(endpointFor(page.dataset.starEndpoint, experience.id), "POST");
+        experiencesById.set(String(updated.id), updated);
+        card.replaceWith(buildExperienceCard(updated));
+      } catch (error) {
+        showToast(copy.star_error_title, error.message, "error");
+        button.disabled = false;
+      }
+    }
+  });
+
+  refreshList();
 })();

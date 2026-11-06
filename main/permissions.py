@@ -18,8 +18,10 @@ class IsPortfolioOwnerOrReadOnly(BasePermission):
         )
 
 
-# Untuk bagian pilihan tugas: Editor boleh PUT/PATCH (dipakai di Tugas 6)
+# Experience & Achievement (Tugas 6): matriks empat peran dari Tugas 4
 class IsPortfolioOwnerOrEditorOrReadOnly(BasePermission):
+    message = "Only the portfolio owner can create or delete; editors can only update."
+
     def has_permission(self, request, view):
         if request.method in SAFE_METHODS:
             return True
@@ -27,7 +29,4 @@ class IsPortfolioOwnerOrEditorOrReadOnly(BasePermission):
             return False
         if request.user.is_superuser:
             return True
-        return (
-            request.method in ("PUT", "PATCH")
-            and request.user.groups.filter(name="Editor").exists()
-        )
+        return request.method in ("PUT", "PATCH") and is_editor(request.user)

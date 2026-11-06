@@ -34,6 +34,8 @@ class PortfolioAjaxTest(TestCase):
                 "texts": ["title", "title_id", "organization", "organization_id", "description", "description_id", "category"],
                 "required_texts": ["title", "organization", "description", "category"],
                 "search_fields": ["title", "title_id", "organization", "organization_id"],
+                "modal": "experience-form-modal",
+                "modal_roles": ("owner", "editor"),
             },
             {
                 "prefix": "achievement",
@@ -47,6 +49,8 @@ class PortfolioAjaxTest(TestCase):
                 "texts": ["title", "title_id", "result", "result_id", "category"],
                 "required_texts": ["title", "result", "category"],
                 "search_fields": ["title", "title_id", "result", "result_id"],
+                "modal": "add-achievement-modal",
+                "modal_roles": ("owner",),
             },
         ]
         for section in self.sections:
@@ -137,8 +141,9 @@ class PortfolioAjaxTest(TestCase):
                     self.assertEqual(fields["can_update"], can_update)
                     self.assertEqual(fields["can_delete"], can_delete)
                     response = self.client.get(section["page"])
-                    modal = f'id="add-{section["prefix"]}-modal"'
-                    if user == self.owner:
+                    modal = f'id="{section["modal"]}"'
+                    role = {self.owner: "owner", self.editor: "editor"}.get(user)
+                    if role in section["modal_roles"]:
                         self.assertContains(response, modal)
                         self.assertIsInstance(response.context["form"], section["form"])
                     else:
