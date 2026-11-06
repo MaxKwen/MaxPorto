@@ -20,79 +20,91 @@
 {% endblock language_switch %}
 
 {% block content %}
-      <section class="section projects-page achievement-page" id="achievement-page" data-endpoint="{% url 'main:get_achievements_json' %}">
-        <div class="projects-header">
-          <div class="projects-heading">
-            <p class="eyebrow">{{ copy.eyebrow }}</p>
-            <h1>{{ copy.page_title }}</h1>
-            <p class="projects-intro">{{ copy.intro }}</p>
-          </div>
-          {% if user.is_superuser %}
-            <button type="button" class="button project-add-button" popovertarget="add-achievement-modal">
-              <span aria-hidden="true">+</span>
-              {{ copy.add_achievement }}
-            </button>
-          {% endif %}
-        </div>
-        <form id="achievement-search-form" class="project-search" method="get">
-          <input id="achievement-search-input" class="project-search__input" type="search" name="q" value="{{ search_query }}" placeholder="{{ copy.search_placeholder }}" aria-label="{{ copy.search_placeholder }}" />
-          <button class="button" type="submit">{{ copy.search }}</button>
-        </form>
-        <div id="achievement-loading" class="empty-state" role="status"><p>{{ copy.loading }}</p></div>
-        <div id="achievement-error" class="empty-state hide" role="alert">
-          <p>{{ copy.load_error }}</p>
-          <button id="achievement-retry" class="button" type="button">{{ copy.retry }}</button>
-        </div>
-        <div id="achievement-empty" class="empty-state hide" role="status"><p>{{ copy.empty_state }}</p></div>
-        <div id="achievement-grid" class="achievement-grid hide" aria-busy="true"></div>
-        <noscript><p class="empty-state">{% if copy.language == "id" %}Aktifkan JavaScript untuk memuat daftar prestasi.{% else %}Enable JavaScript to load the achievement list.{% endif %}</p></noscript>
-      </section>
+  {# Endpoint API DRF; angka 0 diganti ID pengalaman oleh JavaScript #}
+  <section class="section projects-page achievement-page" id="achievement-page"
+           data-endpoint="{% url 'api:achievement-list' %}"
+           data-detail-endpoint="{% url 'api:achievement-detail' 0 %}"
+           data-star-endpoint="{% url 'api:achievement-star' 0 %}">
+    <div class="projects-header">
+      <div class="projects-heading">
+        <p class="eyebrow">{{ copy.eyebrow }}</p>
+        <h1>{{ copy.page_title }}</h1>
+        <p class="projects-intro">{{ copy.intro }}</p>
+      </div>
       {% if user.is_superuser %}
-        {% include "components/achievement_form_modal.html" %}
+        <button type="button" id="achievement-add-button" class="button project-add-button" popovertarget="achievement-form-modal">
+          <span aria-hidden="true">+</span>
+          {{ copy.add_achievement }}
+        </button>
       {% endif %}
-      <template id="achievement-card-template">
-            <article class="achievement-card">
-              <div class="achievement-card__meta">
-                <span class="achievement-category"></span>
-                <span class="achievement-year"></span>
-              </div>
-              <h2></h2>
-              <p class="achievement-result"></p>
-              <div class="project-card-actions">
-                {% if user.is_superuser or is_editor %}
-                  <a class="project-link achievement-edit">
-                    {{ copy.edit_achievement }}
-                  </a>
-                {% endif %}
-                {% if user.is_superuser %}
-                  <button type="button" class="button button-danger achievement-delete">{{ copy.delete_achievement }}</button>
-                  <div class="project-delete-modal" popover="auto" role="dialog" aria-modal="true">
-                    <button type="button" class="project-delete-modal__backdrop" popovertargetaction="hide" aria-label="{{ copy.cancel }}"></button>
-                    <div class="project-delete-modal__content">
-                      <button type="button" class="project-delete-modal__close" popovertargetaction="hide" aria-label="{{ copy.cancel }}">×</button>
-                      <h2>{{ copy.delete_title }}</h2>
-                      <p>{{ copy.delete_prompt }} <strong></strong>?</p>
-                      <div class="project-delete-modal__actions">
-                        <button type="button" class="button button-secondary" popovertargetaction="hide">{{ copy.cancel }}</button>
-                        <form method="post">
-                          {% csrf_token %}
-                          <button type="submit" class="button button-danger">{{ copy.confirm_delete }}</button>
-                        </form>
-                      </div>
-                    </div>
-                  </div>
-                {% endif %}
-                <form method="post" class="star-form">
-                  {% csrf_token %}
-                  <button type="submit" class="button button-star">
-                    <span aria-hidden="true">★</span>
-                    <span class="star-label"></span>
-                    <span class="star-count"></span>
-                  </button>
-                </form>
-              </div>
-            </article>
-      </template>
-      {{ copy|json_script:"achievement-copy" }}
-      <script src="{% static 'js/achievements.js' %}" defer></script>
+    </div>
+    <form id="achievement-search-form" class="project-search" method="get">
+      <input id="achievement-search-input" class="project-search__input" type="search" name="q" value="{{ search_query }}" placeholder="{{ copy.search_placeholder }}" aria-label="{{ copy.search_placeholder }}" />
+      <button class="button" type="submit">{{ copy.search }}</button>
+    </form>
+    <div id="achievement-loading" class="empty-state" role="status"><p>{{ copy.loading }}</p></div>
+    <div id="achievement-error" class="empty-state hide" role="alert">
+      <p>{{ copy.load_error }}</p>
+      <button id="achievement-retry" class="button" type="button">{{ copy.retry }}</button>
+    </div>
+    <div id="achievement-empty" class="empty-state hide" role="status"><p>{{ copy.empty_state }}</p></div>
+    <div id="achievement-grid" class="achievement-grid hide" aria-busy="true"></div>
+    <noscript><p class="empty-state">{% if copy.language == "id" %}Aktifkan JavaScript untuk memuat daftar prestasi.{% else %}Enable JavaScript to load the achievement list.{% endif %}</p></noscript>
+  </section>
+
+  {% if user.is_superuser or is_editor %}
+    {% include "components/achievement_form_modal.html" %}
+  {% endif %}
+
+  {# Satu modal konfirmasi hapus untuk semua kartu #}
+  {% if user.is_superuser %}
+    <div id="achievement-delete-modal" class="project-delete-modal" popover="auto" role="dialog" aria-modal="true" aria-labelledby="achievement-delete-title">
+      <button type="button" class="project-delete-modal__backdrop" popovertarget="achievement-delete-modal" popovertargetaction="hide" aria-label="{{ copy.cancel }}"></button>
+      <div class="project-delete-modal__content">
+        <button type="button" class="project-delete-modal__close" popovertarget="achievement-delete-modal" popovertargetaction="hide" aria-label="{{ copy.cancel }}">×</button>
+        <h2 id="achievement-delete-title">{{ copy.delete_title }}</h2>
+        <p>{{ copy.delete_prompt }} <strong id="achievement-delete-name"></strong>?</p>
+        <div class="project-delete-modal__actions">
+          <button type="button" class="button button-secondary" popovertarget="achievement-delete-modal" popovertargetaction="hide">{{ copy.cancel }}</button>
+          <button type="button" id="achievement-delete-confirm" class="button button-danger">{{ copy.confirm_delete }}</button>
+        </div>
+      </div>
+    </div>
+  {% endif %}
+
+  <template id="achievement-card-template">
+    <article class="achievement-card">
+      <div class="achievement-card__meta">
+        <span class="achievement-category"></span>
+        <span class="achievement-year"></span>
+      </div>
+      <h2></h2>
+      <p class="achievement-result"></p>
+      <div class="project-card-actions">
+        {% if user.is_superuser or is_editor %}
+          <button type="button" class="button button-secondary achievement-edit">{{ copy.edit_achievement }}</button>
+        {% endif %}
+        {% if user.is_superuser %}
+          <button type="button" class="button button-danger achievement-delete">{{ copy.delete_achievement }}</button>
+        {% endif %}
+        {% if user.is_authenticated %}
+          <button type="button" class="button button-star achievement-star">
+            <span aria-hidden="true">★</span>
+            <span class="star-label"></span>
+            <span class="star-count"></span>
+          </button>
+        {% else %}
+          <a class="button button-star" href="{% url 'main:login' %}">
+            <span aria-hidden="true">★</span>
+            <span class="star-label">{{ copy.login_to_star }}</span>
+            <span class="star-count"></span>
+          </a>
+        {% endif %}
+      </div>
+    </article>
+  </template>
+  {# Cookie csrftoken untuk fetch() pengguna biasa dan Editor #}
+  {% csrf_token %}
+  {{ copy|json_script:"achievement-copy" }}
+  <script src="{% static 'js/achievements.js' %}" defer></script>
 {% endblock content %}
