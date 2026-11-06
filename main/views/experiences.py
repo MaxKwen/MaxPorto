@@ -22,7 +22,8 @@ def show_experiences(request, language="en"):
         "search_query": request.GET.get("q", "").strip(),
         "is_editor": is_editor(request.user),
     }
-    if request.user.is_superuser:
+    # Modal dipakai pemilik (tambah/edit) dan Editor (edit saja)
+    if request.user.is_superuser or context["is_editor"]:
         form = ExperienceForm()
         for name, label in EXPERIENCE_COPY[language].get("form_labels", {}).items():
             form.fields[name].label = label

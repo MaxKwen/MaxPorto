@@ -381,12 +381,13 @@ class ExperienceCreateViewTest(SuperuserClientMixin, TestCase):
         self.assertEqual(experience.title_id, "Asisten Riset")
         self.assertEqual(experience.end_year, 2026)
 
-    def test_experience_page_has_ajax_create_modal(self):
+    def test_experience_page_has_api_create_modal(self):
         response = self.client.get(reverse("main:show_experiences"))
 
+        self.assertContains(response, 'id="experience-form-modal"')
+        self.assertContains(response, 'id="experience-add-button"')
         self.assertContains(
-            response,
-            f'action="{reverse("main:create_experience_ajax")}"',
+            response, f'data-endpoint="{reverse("api:experience-list")}"'
         )
         self.assertContains(response, "Add Experience")
 
@@ -856,7 +857,7 @@ class ExperienceDataDeliveryTest(TestCase):
         with patch("main.views.get_experiences_json") as get_json:
             response = self.client.get(reverse("main:show_experiences"))
         get_json.assert_not_called()
-        self.assertContains(response, f'data-endpoint="{reverse("main:get_experiences_json")}"')
+        self.assertContains(response, f'data-endpoint="{reverse("api:experience-list")}"')
         self.assertContains(response, 'id="experience-card-template"')
         self.assertContains(response, '/static/js/experiences.js')
 
@@ -1490,7 +1491,12 @@ class PortfolioAuthorizationTest(TestCase):
                         continue
 
                     prefix = "experience" if section["model"] is Experience else "achievement"
-                    modal_target = f'popovertarget="add-{prefix}-modal"'
+                    # Experience (Tugas 6) memakai satu modal tambah/edit berbasis API
+                    modal_target = (
+                        'id="experience-add-button"'
+                        if prefix == "experience"
+                        else f'popovertarget="add-{prefix}-modal"'
+                    )
                     if can_create:
                         self.assertContains(response, modal_target)
                     else:
@@ -1512,7 +1518,12 @@ class PortfolioAuthorizationTest(TestCase):
                     self.assertEqual(fields["update_url"], section["update"])
                     self.assertEqual(fields["delete_url"], section["delete"])
                     self.assertEqual(fields["star_url"], section["star"])
-                    self.assertContains(response, 'class="star-form"')
+                    if prefix == "experience":
+                        # Star dikirim lewat fetch(); tamu mendapat tautan login
+                        star_marker = "experience-star" if user else reverse("main:login")
+                        self.assertContains(response, star_marker)
+                    else:
+                        self.assertContains(response, 'class="star-form"')
 
 
 class PortfolioStarTest(TestCase):

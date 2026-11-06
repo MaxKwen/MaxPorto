@@ -20,7 +20,11 @@
 {% endblock language_switch %}
 
 {% block content %}
-  <section class="section projects-page experience-page" id="experience-page" data-endpoint="{% url 'main:get_experiences_json' %}">
+  {# Endpoint API DRF; angka 0 diganti ID pengalaman oleh JavaScript #}
+  <section class="section projects-page experience-page" id="experience-page"
+           data-endpoint="{% url 'api:experience-list' %}"
+           data-detail-endpoint="{% url 'api:experience-detail' 0 %}"
+           data-star-endpoint="{% url 'api:experience-star' 0 %}">
     <div class="projects-header">
       <div class="projects-heading">
         <p class="eyebrow">{{ copy.eyebrow }}</p>
@@ -28,7 +32,7 @@
         <p class="projects-intro">{{ copy.intro }}</p>
       </div>
       {% if user.is_superuser %}
-        <button type="button" class="button project-add-button" popovertarget="add-experience-modal">
+        <button type="button" id="experience-add-button" class="button project-add-button" popovertarget="experience-form-modal">
           <span aria-hidden="true">+</span>
           {{ copy.add_experience }}
         </button>
@@ -48,8 +52,24 @@
     <noscript><p class="empty-state">{% if copy.language == "id" %}Aktifkan JavaScript untuk memuat daftar pengalaman.{% else %}Enable JavaScript to load the experience list.{% endif %}</p></noscript>
   </section>
 
-  {% if user.is_superuser %}
+  {% if user.is_superuser or is_editor %}
     {% include "components/experience_form_modal.html" %}
+  {% endif %}
+
+  {# Satu modal konfirmasi hapus untuk semua kartu #}
+  {% if user.is_superuser %}
+    <div id="experience-delete-modal" class="project-delete-modal" popover="auto" role="dialog" aria-modal="true" aria-labelledby="experience-delete-title">
+      <button type="button" class="project-delete-modal__backdrop" popovertarget="experience-delete-modal" popovertargetaction="hide" aria-label="{{ copy.cancel }}"></button>
+      <div class="project-delete-modal__content">
+        <button type="button" class="project-delete-modal__close" popovertarget="experience-delete-modal" popovertargetaction="hide" aria-label="{{ copy.cancel }}">×</button>
+        <h2 id="experience-delete-title">{{ copy.delete_title }}</h2>
+        <p>{{ copy.delete_prompt }} <strong id="experience-delete-name"></strong>?</p>
+        <div class="project-delete-modal__actions">
+          <button type="button" class="button button-secondary" popovertarget="experience-delete-modal" popovertargetaction="hide">{{ copy.cancel }}</button>
+          <button type="button" id="experience-delete-confirm" class="button button-danger">{{ copy.confirm_delete }}</button>
+        </div>
+      </div>
+    </div>
   {% endif %}
 
   <template id="experience-card-template">
@@ -63,37 +83,29 @@
       <p class="experience-description"></p>
       <div class="project-card-actions">
         {% if user.is_superuser or is_editor %}
-          <a class="project-link experience-edit">{{ copy.edit_experience }}</a>
+          <button type="button" class="button button-secondary experience-edit">{{ copy.edit_experience }}</button>
         {% endif %}
         {% if user.is_superuser %}
           <button type="button" class="button button-danger experience-delete">{{ copy.delete_experience }}</button>
-          <div class="project-delete-modal" popover="auto" role="dialog" aria-modal="true">
-            <button type="button" class="project-delete-modal__backdrop" popovertargetaction="hide" aria-label="{{ copy.cancel }}"></button>
-            <div class="project-delete-modal__content">
-              <button type="button" class="project-delete-modal__close" popovertargetaction="hide" aria-label="{{ copy.cancel }}">×</button>
-              <h2>{{ copy.delete_title }}</h2>
-              <p>{{ copy.delete_prompt }} <strong></strong>?</p>
-              <div class="project-delete-modal__actions">
-                <button type="button" class="button button-secondary" popovertargetaction="hide">{{ copy.cancel }}</button>
-                <form method="post">
-                  {% csrf_token %}
-                  <button type="submit" class="button button-danger">{{ copy.confirm_delete }}</button>
-                </form>
-              </div>
-            </div>
-          </div>
         {% endif %}
-        <form method="post" class="star-form">
-          {% csrf_token %}
-          <button type="submit" class="button button-star">
+        {% if user.is_authenticated %}
+          <button type="button" class="button button-star experience-star">
             <span aria-hidden="true">★</span>
             <span class="star-label"></span>
             <span class="star-count"></span>
           </button>
-        </form>
+        {% else %}
+          <a class="button button-star" href="{% url 'main:login' %}">
+            <span aria-hidden="true">★</span>
+            <span class="star-label">{{ copy.login_to_star }}</span>
+            <span class="star-count"></span>
+          </a>
+        {% endif %}
       </div>
     </article>
   </template>
+  {# Cookie csrftoken untuk fetch() pengguna biasa dan Editor #}
+  {% csrf_token %}
   {{ copy|json_script:"experience-copy" }}
   <script src="{% static 'js/experiences.js' %}" defer></script>
 {% endblock content %}
