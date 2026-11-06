@@ -1,29 +1,25 @@
-<div id="add-achievement-modal"
+<div id="achievement-form-modal"
      class="project-form-modal"
      popover="auto"
      role="dialog"
      aria-modal="true"
-     aria-labelledby="add-achievement-modal-title">
+     aria-labelledby="achievement-form-title">
   <button type="button"
           class="project-form-modal__backdrop"
-          popovertarget="add-achievement-modal"
+          popovertarget="achievement-form-modal"
           popovertargetaction="hide"
           aria-label="{{ copy.close_form }}"></button>
 
   <div class="project-form-modal__content">
     <button type="button"
             class="project-form-modal__close"
-            popovertarget="add-achievement-modal"
+            popovertarget="achievement-form-modal"
             popovertargetaction="hide"
             aria-label="{{ copy.close_form }}">×</button>
 
-    <h2 id="add-achievement-modal-title">{{ copy.add_heading }}</h2>
-    <form id="achievement-form"
-          method="post"
-          action="{% url 'main:create_achievement_ajax' %}"
-          class="project-form">
-      {% csrf_token %}
-      <input type="hidden" name="language" value="{{ copy.language }}" />
+    {# Judul dan tombol diganti JavaScript sesuai mode tambah (POST) atau edit (PATCH) #}
+    <h2 id="achievement-form-title">{{ copy.add_heading }}</h2>
+    <form id="achievement-form" class="project-form" novalidate>
       <p id="achievement-form-errors" class="form-error errorlist hide" role="alert"></p>
       {% for field in form %}
         <div class="form-group">
@@ -38,7 +34,7 @@
       <div class="project-form-modal__actions">
         <button type="button"
                 class="button button-secondary"
-                popovertarget="add-achievement-modal"
+                popovertarget="achievement-form-modal"
                 popovertargetaction="hide">{{ copy.cancel }}</button>
         <button type="submit" class="button">{{ copy.add_achievement }}</button>
       </div>

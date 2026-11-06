@@ -19,4 +19,15 @@ urlpatterns = [
         api_views.experience_star,
         name="experience-star",
     ),
+    path("achievements/", api_views.achievement_list, name="achievement-list"),
+    path(
+        "achievements/<int:achievement_id>/",
+        api_views.achievement_detail,
+        name="achievement-detail",
+    ),
+    path(
+        "achievements/<int:achievement_id>/star/",
+        api_views.achievement_star,
+        name="achievement-star",
+    ),
 ]

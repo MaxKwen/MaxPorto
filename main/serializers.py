@@ -1,7 +1,7 @@
 from django.utils.html import strip_tags
 from rest_framework import serializers
 
-from main.models import Experience, Project
+from main.models import Achievement, Experience, Project
 
 
 def clean_text(value, *, required=False, label="This field"):
@@ -105,3 +105,31 @@ class ExperienceSerializer(StarInfoMixin, serializers.ModelSerializer):
                 {"end_year": ["End year cannot be earlier than start year."]}
             )
         return attrs
+
+
+class AchievementSerializer(StarInfoMixin, serializers.ModelSerializer):
+    class Meta:
+        model = Achievement
+        fields = [
+            "id", "title", "title_id", "result", "result_id", "category",
+            "year", "display_order",
+            "star_count", "is_starred", "starred_by_names",
+        ]
+        read_only_fields = ["id"]
+        # Batas tahun sama dengan AchievementForm; tahun boleh kosong
+        extra_kwargs = {"year": YEAR_LIMITS}
+
+    def validate_title(self, value):
+        return clean_text(value, required=True, label="Title")
+
+    def validate_title_id(self, value):
+        return clean_text(value)
+
+    def validate_result(self, value):
+        return clean_text(value, required=True, label="Result")
+
+    def validate_result_id(self, value):
+        return clean_text(value)
+
+    def validate_category(self, value):
+        return clean_text(value, required=True, label="Category")

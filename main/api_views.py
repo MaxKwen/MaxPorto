@@ -8,11 +8,13 @@ from rest_framework.decorators import (
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
-from main.models import Experience, Project
+from main.models import Achievement, Experience, Project
 from main.permissions import (
     IsPortfolioOwnerOrEditorOrReadOnly, IsPortfolioOwnerOrReadOnly,
 )
-from main.serializers import ExperienceSerializer, ProjectSerializer
+from main.serializers import (
+    AchievementSerializer, ExperienceSerializer, ProjectSerializer,
+)
 
 
 # ---------- Helper bersama; izin sudah diperiksa permission class ----------
@@ -129,3 +131,46 @@ def experience_detail(request, experience_id):
 def experience_star(request, experience_id):
     experience = get_object_or_404(Experience, pk=experience_id)
     return toggle_star(request, experience, ExperienceSerializer)
+
+
+# ---------- Achievement (Tugas 6): Editor juga boleh PUT/PATCH ----------
+
+@api_view(["GET", "HEAD", "POST"])
+@authentication_classes([SessionAuthentication])
+@permission_classes([IsPortfolioOwnerOrEditorOrReadOnly])
+def achievement_list(request):
+    if request.method in ("GET", "HEAD"):
+        # Urutan mengikuti Meta.ordering model (display_order, title)
+        achievements = Achievement.objects.prefetch_related("starred_by")
+        # Pencarian Tugas 5 (?q=) dipindah ke parameter query endpoint ini
+        query = request.query_params.get("q", "").strip()
+        if query:
+            achievements = achievements.filter(
+                Q(title__icontains=query)
+                | Q(title_id__icontains=query)
+                | Q(result__icontains=query)
+                | Q(result_id__icontains=query)
+            )
+        serializer = AchievementSerializer(
+            achievements, many=True, context={"request": request},
+        )
+        return Response(serializer.data)
+    return create_response(request, AchievementSerializer)
+
+
+@api_view(["GET", "HEAD", "PUT", "PATCH", "DELETE"])
+@authentication_classes([SessionAuthentication])
+@permission_classes([IsPortfolioOwnerOrEditorOrReadOnly])
+def achievement_detail(request, achievement_id):
+    achievement = get_object_or_404(
+        Achievement.objects.prefetch_related("starred_by"), pk=achievement_id,
+    )
+    return detail_response(request, achievement, AchievementSerializer)
+
+
+@api_view(["POST"])
+@authentication_classes([SessionAuthentication])
+@permission_classes([IsAuthenticated])
+def achievement_star(request, achievement_id):
+    achievement = get_object_or_404(Achievement, pk=achievement_id)
+    return toggle_star(request, achievement, AchievementSerializer)

@@ -49,8 +49,8 @@ class PortfolioAjaxTest(TestCase):
                 "texts": ["title", "title_id", "result", "result_id", "category"],
                 "required_texts": ["title", "result", "category"],
                 "search_fields": ["title", "title_id", "result", "result_id"],
-                "modal": "add-achievement-modal",
-                "modal_roles": ("owner",),
+                "modal": "achievement-form-modal",
+                "modal_roles": ("owner", "editor"),
             },
         ]
         for section in self.sections:

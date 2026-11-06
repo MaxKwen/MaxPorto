@@ -16,9 +16,65 @@
     grid,
   };
   const SEARCH_DEBOUNCE_DELAY = 300;
+  // Field yang dikirim ke serializer; token CSRF form tidak ikut sebagai data
+  const TEXT_FIELDS = ["title", "title_id", "result", "result_id", "category"];
+  // year boleh null; display_order dihilangkan bila kosong agar default model (0) dipakai
+  const NULLABLE_NUMBER_FIELDS = ["year"];
+  const OPTIONAL_NUMBER_FIELDS = ["display_order"];
+  const achievementsById = new Map();
   let searchTimer;
   let activeController;
-  let addingAchievement = false;
+
+  // ---------- Helper request API (CSRF + JSON + pesan error DRF) ----------
+
+  function getCookie(name) {
+    const prefix = `${name}=`;
+    const cookie = document.cookie.split(";").map((value) => value.trim())
+      .find((value) => value.startsWith(prefix));
+    return cookie ? decodeURIComponent(cookie.slice(prefix.length)) : null;
+  }
+
+  function endpointFor(pattern, id) {
+    return pattern.replace("/0/", `/${encodeURIComponent(id)}/`);
+  }
+
+  class ApiError extends Error {
+    constructor(message, status, data) {
+      super(message);
+      this.status = status;
+      this.data = data;
+    }
+  }
+
+  // Error DRF: {"field": ["..."]}, {"non_field_errors": [...]}, atau {"detail": "..."}
+  function apiErrorMessage(data, status) {
+    const messages = Object.values(data || {}).flat().filter((value) => typeof value === "string");
+    if (messages.length) return messages.join(" ");
+    return status === 403 ? copy.request_rejected : copy.add_error;
+  }
+
+  async function sendJson(url, method, payload) {
+    let response;
+    try {
+      response = await fetch(url, {
+        method,
+        headers: {
+          Accept: "application/json",
+          "Content-Type": "application/json",
+          "X-CSRFToken": getCookie("csrftoken") || "",
+        },
+        body: payload === undefined ? undefined : JSON.stringify(payload),
+      });
+    } catch (error) {
+      throw new ApiError(copy.connection_error, 0, null);
+    }
+    if (response.status === 204) return null;
+    const data = await response.json().catch(() => null);
+    if (!response.ok) throw new ApiError(apiErrorMessage(data, response.status), response.status, data);
+    return data;
+  }
+
+  // ---------- Daftar, pencarian, dan kartu ----------
 
   function showState(name) {
     Object.entries(states).forEach(([key, element]) => {
@@ -27,18 +83,18 @@
     grid.setAttribute("aria-busy", String(name === "loading"));
   }
 
-  function localizedValue(fields, name) {
-    return copy.language === "id" && fields[`${name}_id`]
-      ? fields[`${name}_id`]
-      : fields[name];
+  function localizedValue(achievement, name) {
+    return copy.language === "id" && achievement[`${name}_id`]
+      ? achievement[`${name}_id`]
+      : achievement[name];
   }
 
-  function buildAchievementCard(item) {
-    const achievement = item.fields;
+  function buildAchievementCard(achievement) {
     const card = cardTemplate.content.firstElementChild.cloneNode(true);
     const title = localizedValue(achievement, "title");
+    card.dataset.id = achievement.id;
 
-    // Keep user-supplied text out of HTML parsing, including labels and tooltips.
+    // Teks dari pengguna selalu lewat textContent, tidak pernah lewat innerHTML
     card.querySelector("h2").textContent = title;
     card.querySelector(".achievement-category").textContent = achievement.category;
     const year = card.querySelector(".achievement-year");
@@ -47,44 +103,20 @@
     card.querySelector(".achievement-result").textContent =
       localizedValue(achievement, "result");
 
-    const editLink = card.querySelector(".achievement-edit");
-    if (editLink) {
-      if (achievement.can_update) editLink.href = achievement.update_url;
-      else editLink.remove();
-    }
-
+    const editButton = card.querySelector(".achievement-edit");
+    if (editButton) editButton.setAttribute("aria-label", `${copy.edit_achievement}: ${title}`);
     const deleteButton = card.querySelector(".achievement-delete");
-    const deleteModal = card.querySelector(".project-delete-modal");
-    if (deleteButton && deleteModal) {
-      if (achievement.can_delete) {
-        const modalId = `delete-achievement-${item.pk}`;
-        deleteModal.id = modalId;
-        const heading = deleteModal.querySelector("h2");
-        heading.id = `${modalId}-title`;
-        deleteModal.setAttribute("aria-labelledby", heading.id);
-        deleteModal.querySelector("strong").textContent = title;
-        deleteModal.querySelector("form").action = achievement.delete_url;
-        deleteModal.querySelectorAll("[popovertargetaction]").forEach((button) => {
-          button.setAttribute("popovertarget", modalId);
-        });
-        deleteButton.setAttribute("popovertarget", modalId);
-        deleteButton.setAttribute("aria-label", `${copy.delete_achievement}: ${title}`);
-      } else {
-        deleteButton.remove();
-        deleteModal.remove();
-      }
-    }
+    if (deleteButton) deleteButton.setAttribute("aria-label", `${copy.delete_achievement}: ${title}`);
 
-    const starForm = card.querySelector(".star-form");
-    const starButton = starForm.querySelector("button");
-    starForm.action = achievement.star_url;
-    starButton.classList.toggle("is-starred", achievement.is_starred);
-    starButton.title = achievement.star_count > 0
+    const star = card.querySelector(".button-star");
+    star.classList.toggle("is-starred", achievement.is_starred);
+    star.title = achievement.star_count > 0
       ? `${copy.starred_by} ${achievement.starred_by_names}`
       : copy.first_star;
-    starButton.querySelector(".star-label").textContent =
-      achievement.is_starred ? copy.unstar : copy.star;
-    starButton.querySelector(".star-count").textContent = achievement.star_count;
+    if (star.classList.contains("achievement-star")) {
+      star.querySelector(".star-label").textContent = achievement.is_starred ? copy.unstar : copy.star;
+    }
+    star.querySelector(".star-count").textContent = achievement.star_count;
     return card;
   }
 
@@ -106,43 +138,49 @@
       if (!Array.isArray(items)) throw new Error("Invalid achievement response");
       if (controller.signal.aborted || controller !== activeController) return;
 
+      achievementsById.clear();
+      items.forEach((item) => achievementsById.set(String(item.id), item));
       if (items.length === 0) {
         grid.replaceChildren();
-        emptyState.querySelector("p").textContent = query
-          ? copy.no_results
-          : copy.empty_state;
+        emptyState.querySelector("p").textContent = query ? copy.no_results : copy.empty_state;
         showState("empty");
         return;
       }
-
-      const cards = items.map(buildAchievementCard);
-      grid.replaceChildren(...cards);
+      grid.replaceChildren(...items.map(buildAchievementCard));
       showState("grid");
     } catch (error) {
       if (error.name === "AbortError" || controller !== activeController) return;
-      console.error("Error loading achievements:", error);
+      console.error("Error loading achievement:", error);
       showState("error");
     }
   }
 
-  function searchAchievements() {
+  function refreshList() {
     clearTimeout(searchTimer);
-    fetchAchievements(searchInput.value.trim());
+    return fetchAchievements(searchInput.value.trim());
   }
 
   searchInput.addEventListener("input", () => {
     clearTimeout(searchTimer);
-    // Invalidate an in-flight result as soon as the query changes.
+    // Batalkan hasil lama begitu kata kunci berubah
     if (activeController) activeController.abort();
-    searchTimer = setTimeout(searchAchievements, SEARCH_DEBOUNCE_DELAY);
+    searchTimer = setTimeout(refreshList, SEARCH_DEBOUNCE_DELAY);
   });
   searchForm.addEventListener("submit", (event) => {
     event.preventDefault();
-    searchAchievements();
+    refreshList();
   });
-  retryButton.addEventListener("click", searchAchievements);
+  retryButton.addEventListener("click", refreshList);
+
+  // ---------- Modal tambah (POST) dan edit (PATCH) ----------
+
+  const formModal = document.getElementById("achievement-form-modal");
   const achievementForm = document.getElementById("achievement-form");
-  const addModal = document.getElementById("add-achievement-modal");
+  const formTitle = document.getElementById("achievement-form-title");
+  const addButton = document.getElementById("achievement-add-button");
+  const submitButton = achievementForm?.querySelector('button[type="submit"]');
+  let editingId = null;
+  let saving = false;
 
   function clearFormErrors() {
     achievementForm.querySelectorAll("[data-error-for]").forEach((element) => {
@@ -156,72 +194,144 @@
     summary.classList.add("hide");
   }
 
+  // Tampilkan error per field dari serializer di bawah input masing-masing
   function displayFormErrors(errors) {
-    const messages = [];
-    Object.entries(errors).forEach(([name, fieldErrors]) => {
-      const text = fieldErrors.map((error) => error.message).join(" ");
+    Object.entries(errors || {}).forEach(([name, fieldErrors]) => {
+      const text = [].concat(fieldErrors).join(" ");
       const field = achievementForm.elements.namedItem(name);
-      const errorElement = Array.from(
-        achievementForm.querySelectorAll("[data-error-for]")
-      ).find((element) => element.dataset.errorFor === name);
+      const errorElement = achievementForm.querySelector(`[data-error-for="${CSS.escape(name)}"]`);
       if (field && errorElement) {
         field.setAttribute("aria-invalid", "true");
         errorElement.textContent = text;
-        messages.push(`${field.labels[0].textContent}: ${text}`);
       } else {
         const summary = document.getElementById("achievement-form-errors");
         summary.textContent = text;
         summary.classList.remove("hide");
-        messages.push(text);
       }
     });
-    return messages.join(" ");
   }
 
-  async function addAchievement(event) {
-    event.preventDefault();
-    if (addingAchievement) return;
-
-    addingAchievement = true;
+  function setMode(achievement) {
+    editingId = achievement ? String(achievement.id) : null;
     clearFormErrors();
-    const submitButton = achievementForm.querySelector('button[type="submit"]');
+    achievementForm.reset();
+    if (achievement) {
+      [...TEXT_FIELDS, ...NULLABLE_NUMBER_FIELDS, ...OPTIONAL_NUMBER_FIELDS].forEach((name) => {
+        const field = achievementForm.elements.namedItem(name);
+        if (field) field.value = achievement[name] ?? "";
+      });
+    }
+    formTitle.textContent = achievement ? copy.edit_heading : copy.add_heading;
+    submitButton.textContent = achievement ? copy.save_changes : copy.add_achievement;
+  }
+
+  function formPayload() {
+    const fields = new FormData(achievementForm);
+    const payload = {};
+    TEXT_FIELDS.forEach((name) => { payload[name] = fields.get(name) ?? ""; });
+    NULLABLE_NUMBER_FIELDS.forEach((name) => {
+      const value = String(fields.get(name) ?? "").trim();
+      payload[name] = value === "" ? null : Number(value);
+    });
+    OPTIONAL_NUMBER_FIELDS.forEach((name) => {
+      const value = String(fields.get(name) ?? "").trim();
+      if (value !== "") payload[name] = Number(value);
+    });
+    return payload;
+  }
+
+  async function saveAchievement(event) {
+    event.preventDefault();
+    if (saving) return;
+    saving = true;
+    clearFormErrors();
+    const isEdit = editingId !== null;
     submitButton.disabled = true;
-    submitButton.textContent = copy.adding;
+    submitButton.textContent = isEdit ? copy.saving : copy.adding;
 
     try {
-      // FormData includes the CSRF token rendered by Django in the modal.
-      const response = await fetch(achievementForm.action, {
-        method: "POST",
-        body: new FormData(achievementForm),
-        headers: { Accept: "application/json" },
-      });
-      const result = await response.json().catch(() => null);
-
-      if (response.status === 201 && result) {
-        achievementForm.reset();
-        addModal.hidePopover();
-        showToast(copy.add_success_title, result.message || copy.add_success, "success");
-        clearTimeout(searchTimer);
-        await fetchAchievements(searchInput.value.trim());
+      if (isEdit) {
+        await sendJson(endpointFor(page.dataset.detailEndpoint, editingId), "PATCH", formPayload());
       } else {
-        const message = result?.errors
-          ? displayFormErrors(result.errors)
-          : (result?.message || (response.status === 403 ? copy.request_rejected : copy.add_error));
-        showToast(copy.add_error_title, message || copy.add_error, "error");
+        await sendJson(page.dataset.endpoint, "POST", formPayload());
       }
+      formModal.hidePopover();
+      showToast(copy.add_success_title, isEdit ? copy.edit_success : copy.add_success, "success");
+      setMode(null);
+      await refreshList();
     } catch (error) {
-      console.error("Error adding achievement:", error);
-      showToast(copy.add_error_title, copy.connection_error, "error");
+      // 400: error per field tetap terlihat di modal; 403/jaringan: cukup toast
+      if (error.status === 400) displayFormErrors(error.data);
+      showToast(isEdit ? copy.edit_error_title : copy.add_error_title, error.message, "error");
     } finally {
-      addingAchievement = false;
+      saving = false;
       submitButton.disabled = false;
-      submitButton.textContent = copy.add_achievement;
+      if (submitButton.textContent === copy.saving || submitButton.textContent === copy.adding) {
+        submitButton.textContent = editingId !== null ? copy.save_changes : copy.add_achievement;
+      }
     }
   }
 
-  // The modal is deliberately absent for guests, ordinary users, and Editors.
-  if (achievementForm && addModal) {
-    achievementForm.addEventListener("submit", addAchievement);
+  if (achievementForm && formModal) {
+    achievementForm.addEventListener("submit", saveAchievement);
+    // Tombol tambah membuka modal yang sama dalam mode tambah
+    if (addButton) addButton.addEventListener("click", () => setMode(null));
   }
-  searchAchievements();
+
+  // ---------- Hapus (DELETE) dengan modal konfirmasi ----------
+
+  const deleteModal = document.getElementById("achievement-delete-modal");
+  const deleteConfirm = document.getElementById("achievement-delete-confirm");
+  let deletingId = null;
+
+  if (deleteModal && deleteConfirm) {
+    deleteConfirm.addEventListener("click", async () => {
+      if (deletingId === null || deleteConfirm.disabled) return;
+      deleteConfirm.disabled = true;
+      try {
+        await sendJson(endpointFor(page.dataset.detailEndpoint, deletingId), "DELETE");
+        deleteModal.hidePopover();
+        showToast(copy.add_success_title, copy.delete_success, "success");
+        await refreshList();
+      } catch (error) {
+        showToast(copy.delete_error_title, error.message, "error");
+      } finally {
+        deleteConfirm.disabled = false;
+        deletingId = null;
+      }
+    });
+  }
+
+  // ---------- Event delegation untuk tombol di kartu ----------
+
+  grid.addEventListener("click", async (event) => {
+    const button = event.target.closest("button");
+    const card = button?.closest(".achievement-card");
+    if (!button || !card || button.disabled) return;
+    const achievement = achievementsById.get(card.dataset.id);
+    if (!achievement) return;
+
+    if (button.classList.contains("achievement-edit") && formModal) {
+      setMode(achievement);
+      formModal.showPopover();
+    } else if (button.classList.contains("achievement-delete") && deleteModal) {
+      deletingId = String(achievement.id);
+      document.getElementById("achievement-delete-name").textContent =
+        localizedValue(achievement, "title");
+      deleteModal.showPopover();
+    } else if (button.classList.contains("achievement-star")) {
+      // Toggle: tombol dikunci selama request agar tidak terkirim dua kali
+      button.disabled = true;
+      try {
+        const updated = await sendJson(endpointFor(page.dataset.starEndpoint, achievement.id), "POST");
+        achievementsById.set(String(updated.id), updated);
+        card.replaceWith(buildAchievementCard(updated));
+      } catch (error) {
+        showToast(copy.star_error_title, error.message, "error");
+        button.disabled = false;
+      }
+    }
+  });
+
+  refreshList();
 })();

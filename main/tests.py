@@ -434,7 +434,7 @@ class AchievementCreateViewTest(SuperuserClientMixin, TestCase):
 
         self.assertContains(
             response,
-            f'action="{reverse("main:create_achievement_ajax")}"',
+            f'data-endpoint="{reverse("api:achievement-list")}"',
         )
         self.assertContains(response, "Add Achievement")
 
@@ -890,7 +890,7 @@ class AchievementDataDeliveryTest(TestCase):
         with patch("main.views.get_achievements_json") as get_json:
             response = self.client.get(reverse("main:show_achievements"))
         get_json.assert_not_called()
-        self.assertContains(response, f'data-endpoint="{reverse("main:get_achievements_json")}"')
+        self.assertContains(response, f'data-endpoint="{reverse("api:achievement-list")}"')
         self.assertContains(response, 'id="achievement-card-template"')
         self.assertContains(response, '/static/js/achievements.js')
 
@@ -1491,12 +1491,8 @@ class PortfolioAuthorizationTest(TestCase):
                         continue
 
                     prefix = "experience" if section["model"] is Experience else "achievement"
-                    # Experience (Tugas 6) memakai satu modal tambah/edit berbasis API
-                    modal_target = (
-                        'id="experience-add-button"'
-                        if prefix == "experience"
-                        else f'popovertarget="add-{prefix}-modal"'
-                    )
+                    # Tugas 6: satu modal tambah/edit berbasis API; tombol tambah hanya pemilik
+                    modal_target = f'id="{prefix}-add-button"'
                     if can_create:
                         self.assertContains(response, modal_target)
                     else:
@@ -1518,12 +1514,9 @@ class PortfolioAuthorizationTest(TestCase):
                     self.assertEqual(fields["update_url"], section["update"])
                     self.assertEqual(fields["delete_url"], section["delete"])
                     self.assertEqual(fields["star_url"], section["star"])
-                    if prefix == "experience":
-                        # Star dikirim lewat fetch(); tamu mendapat tautan login
-                        star_marker = "experience-star" if user else reverse("main:login")
-                        self.assertContains(response, star_marker)
-                    else:
-                        self.assertContains(response, 'class="star-form"')
+                    # Star dikirim lewat fetch(); tamu mendapat tautan login
+                    star_marker = f"{prefix}-star" if user else reverse("main:login")
+                    self.assertContains(response, star_marker)
 
 
 class PortfolioStarTest(TestCase):
