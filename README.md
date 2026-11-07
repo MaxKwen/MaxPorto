@@ -3,7 +3,8 @@
 Proyek portofolio pribadi bilingual yang menggunakan Django dan pola
 Model-View-Template (MVT). Data pengalaman, proyek, keahlian, dan pencapaian
 disimpan dalam model Django. Halaman Experience, Projects, dan Achievements
-memuat kartu melalui AJAX, sedangkan Skills dirender melalui template HTML.
+memuat dan mengubah data melalui REST API berbasis Django REST Framework (DRF)
+di `/api/v1/`, sedangkan Skills dirender melalui template HTML.
 
 > Nama: Maximus Quinn Hertada
 >
@@ -28,27 +29,32 @@ memuat kartu melalui AJAX, sedangkan Skills dirender melalui template HTML.
   empat peran: guest, user biasa, Editor, dan superuser.
 - Pengguna yang sudah login dapat memberi atau membatalkan star pada Experience,
   Project, dan Achievement. Setiap relasi star disimpan melalui `ManyToManyField`.
-- Data Experience, Project, dan Achievement tersedia dalam format JSON melalui:
-  - `/api/experiences/`
-  - `/api/projects/`
-  - `/api/achievements/`
-- Halaman daftar Experience, Project, dan Achievement memuat data dengan `fetch`
-  dari endpoint JSON manual menggunakan `JsonResponse`, lalu menampilkan kartu
-  tanpa reload. Respons menyertakan jumlah star, status star pengguna, URL aksi,
-  dan izin update/delete.
+- REST API DRF untuk Experience, Project, dan Achievement di `/api/v1/`
+  (daftar, detail, tambah, ubah, hapus, dan star). Detail endpoint ada di bagian
+  [REST API](#rest-api-django-rest-framework).
+- Halaman Experience, Projects, dan Achievements menampilkan, mencari, menambah,
+  memberi star, dan menghapus data lewat API tersebut tanpa reload. Experience
+  dan Achievement juga punya modal edit yang mengirim `PATCH`, dipakai oleh
+  Editor dan pemilik portofolio.
+- Endpoint JSON manual dari Tugas 5 (`/api/experiences/`, `/api/projects/`,
+  `/api/achievements/`) masih tersedia untuk kompatibilitas, tetapi halaman
+  tidak lagi memakainya.
 - Pencarian Experience berdasarkan posisi atau organisasi, dan Achievement
   berdasarkan judul atau hasil, mencakup field English/Indonesia. Keduanya
   menggunakan debounce 300 ms; Projects menyediakan pencarian judul.
 - Loading, empty, dan error state serta tombol retry tersedia pada daftar AJAX.
 - Superuser dapat menambahkan Experience, Project, dan Achievement melalui modal
-  AJAX dengan CSRF, validasi server-side, toast sukses/gagal, dan refresh daftar
-  tanpa reload. Experience dan Achievement juga menampilkan error per field.
-- Input teks Experience dan Achievement dibersihkan dengan `strip_tags`, lalu
-  dirender menggunakan `textContent`. Field teks wajib yang menjadi kosong
+  dengan CSRF, validasi serializer, toast sukses/gagal, dan refresh daftar tanpa
+  reload. Error validasi 400 dan penolakan 403 dari API ditampilkan lewat toast;
+  Experience dan Achievement juga menampilkan error per field di modal.
+- Input teks Experience dan Achievement dibersihkan dengan `strip_tags` (di
+  `ModelForm` dan di `validate_<field>` serializer), lalu dirender menggunakan
+  `textContent`. Field teks wajib yang menjadi kosong
   setelah sanitasi ditolak. Validasi mencakup rentang tahun 1900–2100,
   urutan tahun Experience, serta urutan tampilan Achievement tidak negatif.
-- Relasi pengguna pada respons JSON direpresentasikan dengan username, bukan
-  primary key internal, termasuk daftar natural keys `starred_by`.
+- Respons API hanya memuat field yang ditulis eksplisit di serializer. Informasi
+  star (`star_count`, `is_starred`, `starred_by_names`) bersifat read-only dan
+  hanya berisi username; email dan password hash tidak pernah dikirim.
 - Template memakai `base.html` sebagai root template bersama agar struktur
   navigasi, metadata, theme toggle, message, dan footer tidak diduplikasi.
 - Django Template Language menyediakan kerangka halaman, kontrol sesuai role,
@@ -64,14 +70,17 @@ memuat kartu melalui AJAX, sedangkan Skills dirender melalui template HTML.
 
 ## Teknologi
 
-- Python dan Django
+- Python dan Django 5.2
+- Django REST Framework 3.18
 - HTML5 semantik
 - CSS3 murni
 - JavaScript vanilla, Fetch API, dan DOM API
 
 ## Menjalankan proyek secara lokal
 
-Prasyarat: Python 3 dan `pip`.
+Prasyarat: Python 3.10 atau lebih baru dan `pip`. Sejak Tutorial 7, proyek
+memakai Django 5.2 dan Django REST Framework 3.18 (`djangorestframework` di
+`requirements.txt`).
 
 ```powershell
 python -m venv .venv
@@ -85,12 +94,22 @@ python manage.py runserver
 Buka `http://127.0.0.1:8000/` untuk halaman English atau
 `http://127.0.0.1:8000/id/` untuk halaman Indonesia.
 
+Jika environment sudah ada sebelum Tutorial 7, cukup jalankan ulang
+`python -m pip install -r requirements.txt` untuk memperbarui Django dan
+memasang DRF. Pada virtual environment buatan `uv` yang tidak memiliki `pip`,
+gunakan `uv pip install --python .venv/Scripts/python.exe -r requirements.txt`.
+
 Pemeriksaan dan test dapat dijalankan dengan:
 
 ```powershell
 python manage.py check
-python manage.py test
+python manage.py test main
+python manage.py test main.tests_api main.tests_api_portfolio --verbosity 2
 ```
+
+Gunakan `test main`, bukan `test` tanpa nama app, agar skrip Selenium
+`test_e2e.py` di root proyek tidak ikut dijalankan sebagai unit test. Perintah
+ketiga hanya menjalankan test API Tutorial 7 dan Tugas 6.
 
 ## Konfigurasi peran Editor
 
@@ -121,6 +140,12 @@ request POST serta dilindungi CSRF. Khusus endpoint tambah AJAX, guest, user
 biasa, dan Editor menerima JSON HTTP 403, bukan redirect login. Endpoint ini
 tidak memakai `csrf_exempt`; POST tanpa token CSRF yang valid tetap ditolak.
 
+Matriks yang sama berlaku di REST API Experience dan Achievement melalui
+`IsPortfolioOwnerOrEditorOrReadOnly`. Bedanya, API tidak mengarahkan guest ke
+halaman login: setiap penolakan, termasuk dari guest, dijawab dengan HTTP 403
+berformat JSON. API Projects mengikuti contoh Tutorial 7
+(`IsPortfolioOwnerOrReadOnly`), sehingga hanya superuser yang dapat menulis.
+
 ### Menggunakan daftar dan modal AJAX
 
 1. Buka `/experience/` atau `/achievements/`; JavaScript memuat daftar melalui API.
@@ -133,9 +158,51 @@ tidak memakai `csrf_exempt`; POST tanpa token CSRF yang valid tetap ditolak.
    membuka modal. Isi form dan submit; error server muncul di bawah field dan
    pada toast. Saat berhasil, modal ditutup, form direset, dan daftar dimuat ulang
    dengan kata kunci yang masih aktif, tanpa reload halaman.
+5. Login sebagai Editor atau superuser, lalu tekan **Edit** pada kartu. Modal yang
+   sama terbuka dalam mode edit dengan data terisi, lalu mengirim `PATCH`.
+6. Superuser dapat menekan **Delete**; konfirmasi di modal mengirim `DELETE`.
+   Pengguna yang sudah login dapat menekan **Star** untuk memberi atau
+   membatalkan star. Guest melihat tautan login sebagai pengganti tombol star.
 
-Edit, delete, dan star tetap memakai alur halaman/form POST yang sudah ada;
-ketiganya belum diubah menjadi AJAX. Halaman daftar AJAX membutuhkan JavaScript.
+Setiap request yang mengubah data mengirim header `X-CSRFToken` dari cookie
+`csrftoken`. Halaman edit Tugas 3 (`/experience/<id>/edit/` dan
+`/achievements/<id>/edit/`) masih dapat dipakai. Halaman daftar membutuhkan
+JavaScript.
+
+## REST API (Django REST Framework)
+
+API dibangun dengan function-based view `@api_view` di `main/api_views.py`,
+`SessionAuthentication`, serializer di `main/serializers.py`, dan permission
+class di `main/permissions.py`. Semua endpoint berada di bawah `/api/v1/` dan
+didaftarkan di `main/api_urls.py` dengan namespace `api`.
+
+| Method | Endpoint | Tindakan | Siapa yang boleh |
+| --- | --- | --- | --- |
+| GET | `/api/v1/experiences/?q=...` | Daftar dan pencarian posisi/organisasi (EN/ID) | Semua pengunjung |
+| POST | `/api/v1/experiences/` | Tambah Experience | Superuser |
+| GET | `/api/v1/experiences/<id>/` | Detail | Semua pengunjung |
+| PUT / PATCH | `/api/v1/experiences/<id>/` | Ubah seluruh / sebagian field | Editor dan superuser |
+| DELETE | `/api/v1/experiences/<id>/` | Hapus | Superuser |
+| POST | `/api/v1/experiences/<id>/star/` | Beri/batalkan star | Pengguna login |
+| GET, POST | `/api/v1/achievements/?q=...` | Daftar dan pencarian judul/hasil (EN/ID); tambah | Sama seperti Experience |
+| GET, PUT, PATCH, DELETE | `/api/v1/achievements/<id>/` | Detail, ubah, hapus | Sama seperti Experience |
+| POST | `/api/v1/achievements/<id>/star/` | Beri/batalkan star | Pengguna login |
+| GET, POST | `/api/v1/projects/?title=...` | Daftar, pencarian, tambah (Tutorial 7) | Baca: semua; tambah: superuser |
+| GET, PUT, PATCH, DELETE | `/api/v1/projects/<id>/` | Detail, ubah, hapus (Tutorial 7) | Baca: semua; tulis: superuser |
+| POST | `/api/v1/projects/<id>/star/` | Beri/batalkan star (Tutorial 7) | Pengguna login |
+
+Status yang dikembalikan: `200` untuk baca dan ubah, `201` saat data dibuat,
+`204` setelah data dihapus (body kosong), `400` beserta error per field untuk
+input tidak valid, `403` untuk tindakan yang tidak diizinkan atau token CSRF
+yang hilang, `404` untuk ID yang tidak ada, dan `405` untuk method yang tidak
+didukung. Browsable API dapat dibuka langsung di browser pada alamat yang sama;
+tambahkan `?format=json` untuk melihat JSON mentah.
+
+Validasi berada di serializer: `validate_<field>` membersihkan setiap field teks
+dengan `strip_tags` dan menolak field wajib yang menjadi kosong, batas tahun
+1900–2100 mengikuti `ModelForm`, dan `ExperienceSerializer.validate()` menolak
+tahun selesai yang lebih awal dari tahun mulai, termasuk saat `PATCH` hanya
+mengirim salah satunya.
 
 ## Struktur proyek
 
@@ -146,13 +213,18 @@ MaxPorto/
 ├── main/
 │   ├── migrations/         # Skema dan seed data
 │   ├── copy.py             # Label/pesan bilingual fitur portofolio
-│   ├── permissions.py      # Pemeriksaan role Editor
+│   ├── permissions.py      # Helper role Editor dan permission class DRF
 │   ├── forms.py            # ModelForm dan validasi
 │   ├── models.py           # Project, Experience, Skill, Achievement
+│   ├── serializers.py      # ModelSerializer + field star read-only
+│   ├── api_views.py        # View @api_view: daftar, detail, star
+│   ├── api_urls.py         # Route /api/v1/ (namespace api)
 │   ├── tests.py            # Test model, auth, akses, star, dan view
-│   ├── test_ajax.py        # Test kontrak AJAX
+│   ├── test_ajax.py        # Test kontrak AJAX Tugas 5
 │   ├── test_structure.py   # Test template, stylesheet, dan modul view
-│   ├── urls.py             # Named URL halaman dan API
+│   ├── tests_api.py        # Test API Projects (Tutorial 7)
+│   ├── tests_api_portfolio.py  # Test API Experience & Achievement (Tugas 6)
+│   ├── urls.py             # Named URL halaman dan API JSON lama
 │   └── views/
 │       ├── __init__.py     # Ekspor fungsi untuk main.views
 │       ├── auth.py
@@ -180,13 +252,13 @@ MaxPorto/
 └── manage.py
 ```
 
-Konten antarmuka bilingual disimpan dalam kamus copy pada view. Untuk daftar
-AJAX, view mengambil QuerySet, menyusun dictionary/list berisi field model,
-informasi star, dan izin aksi, kemudian mengirimnya dengan `JsonResponse`.
-Browser memanggil `fetch`, membaca `response.json()`, dan mengisi kartu pada DOM.
-Experience dan Achievement memakai template kartu yang dikloning dan diisi
-dengan `textContent`; data tidak dideserialisasi kembali menjadi model di view
-halaman. `ModelForm` tetap menjadi sumber validasi dan penyimpanan data.
+Konten antarmuka bilingual disimpan dalam kamus copy pada view. View halaman
+hanya merender kerangka, form modal sesuai peran, dan alamat endpoint pada
+atribut `data-*`. Browser memanggil `fetch` ke `/api/v1/`, API view mengambil
+QuerySet, serializer mengubahnya menjadi JSON, lalu JavaScript mengisi kartu
+dari template `<template>` dengan `textContent`. Untuk request yang mengubah
+data, serializer memvalidasi input dan menyimpannya; `ModelForm` masih dipakai
+oleh halaman create/update Tugas 3 dan untuk merender input modal.
 
 ## Pertanyaan reflektif
 
@@ -443,6 +515,132 @@ diperlukan. Template Django juga dapat rentan jika autoescaping dimatikan atau
 data tidak dipercaya diberi filter `safe`; perlindungan harus mengikuti konteks
 tempat data dipakai.
 
+### Tugas 6
+
+### 1. Jelaskan apa yang dimaksud dengan REST dan mengapa mengembalikan JSON saja belum cukup untuk menyebut sebuah API sebagai RESTful! Jelaskan pula perbedaan PUT dan PATCH beserta contoh kapan masing-masing sebaiknya digunakan!
+
+REST (Representational State Transfer) adalah gaya arsitektur untuk merancang
+web API, bukan library atau format data. Data diperlakukan sebagai resource
+yang punya alamat sendiri, misalnya `/api/v1/experiences/` untuk kumpulan
+pengalaman dan `/api/v1/experiences/3/` untuk satu pengalaman. Tindakan
+dinyatakan lewat HTTP method: `GET` membaca, `POST` membuat, `PUT`/`PATCH`
+mengubah, dan `DELETE` menghapus. Klien dan server bertukar representasi data
+(di proyek ini JSON), status hasilnya disampaikan lewat kode HTTP, dan setiap
+request seharusnya membawa informasi yang dibutuhkan server (stateless).
+
+Karena itu, JSON hanyalah format representasi. Endpoint Tugas 5 juga
+mengembalikan JSON, tetapi desainnya belum RESTful: tindakan ditulis di URL
+(`POST /experience/add-ajax/`, `POST /experience/<id>/delete/`), resource yang
+sama tersebar di beberapa alamat, dan hapus/star mengembalikan redirect HTML,
+bukan status seperti `204`. Pada Tugas 6, satu alamat resource dipakai dengan
+method yang berbeda, dan hasilnya dinyatakan dengan status `201`, `204`, `400`,
+`403`, `404`, atau `405`. API ini juga tidak sepenuhnya mengikuti REST:
+`SessionAuthentication` menyimpan session di server, dan `/star/` lebih mirip
+aksi daripada resource. Yang saya jaga adalah kontrak API yang jelas dan
+konsisten.
+
+`PUT` mengirim representasi pengganti yang lengkap, sehingga semua field wajib
+harus ada. `PATCH` hanya mengirim field yang ingin diubah; di DRF ini berarti
+serializer dipanggil dengan `partial=True`, dan field yang tidak dikirim tetap
+memakai nilai lama. Di proyek ini, `PUT` yang hanya berisi `title` ditolak
+dengan `400` karena field wajib lain tidak ada, sedangkan `PATCH` dengan
+`title` saja berhasil dan deskripsi tetap sama. `PUT` cocok ketika klien
+memegang seluruh data dan ingin menggantinya sekaligus, misalnya menyinkronkan
+satu entri dari sumber lain. `PATCH` cocok untuk perubahan sebagian, seperti
+mengubah judul atau tahun selesai. Modal edit saya memakai `PATCH`. Validasi
+lintas field tetap berjalan pada `PATCH`: jika hanya `end_year` yang dikirim,
+`ExperienceSerializer.validate()` membandingkannya dengan `start_year` yang
+sudah tersimpan.
+
+### 2. Jelaskan peran serializer pada Django REST Framework! Apa keuntungannya dibandingkan merakit dictionary secara manual dengan JsonResponse seperti pada Tutorial 05?
+
+Serializer bekerja dua arah. Saat membaca (`GET`), serializer mengubah objek
+model atau QuerySet menjadi tipe data Python yang dirender DRF menjadi JSON
+(serialization). Saat menulis (`POST`, `PUT`, `PATCH`), serializer menerima
+`request.data`, memvalidasinya lewat `is_valid()`, lalu `save()` memanggil
+`create()` atau `update()` (deserialization). `ExperienceSerializer` dan
+`AchievementSerializer` di proyek ini menentukan daftar `fields` secara
+eksplisit, membersihkan teks di `validate_<field>`, dan mewarisi
+`StarInfoMixin` yang menyediakan `star_count`, `is_starred`, dan
+`starred_by_names` sebagai field hasil perhitungan yang read-only.
+
+Pada `get_experiences_json` Tutorial/Tugas 5, saya menulis dictionary field
+demi field, menghitung star sendiri, lalu membungkusnya dengan `JsonResponse`.
+Validasi input dilakukan terpisah oleh `ModelForm` di view lain, dan status
+HTTP serta bentuk error (`form.errors.get_json_data()`) diatur manual di setiap
+view. Dengan serializer:
+
+- representasi dan validasi didefinisikan sekali, lalu dipakai oleh daftar,
+  detail, tambah, ubah, dan star;
+- field yang tidak dicantumkan tidak akan bocor. Ini penting karena relasi ke
+  `User` bisa membawa email atau password hash;
+- field read-only otomatis diabaikan saat menulis. Test saya mengirim
+  `star_count: 99` dan `starred_by` palsu, dan keduanya tidak tersimpan;
+- `is_valid(raise_exception=True)` langsung menghasilkan `400` dengan error per
+  field dalam format yang konsisten, sehingga frontend cukup punya satu
+  pembaca error;
+- update sebagian cukup dengan `partial=True`, tanpa logika tambahan.
+
+Kekurangannya, serializer tidak menjalankan `clean_<field>` milik `ModelForm`.
+Karena halaman edit Tugas 3 masih memakai form, aturan validasi yang sama perlu
+dijaga di dua tempat. Kesesuaiannya saya pastikan lewat test.
+
+### 3. Jelaskan perbedaan autentikasi dan otorisasi pada Django REST Framework! Mengapa hak akses harus diperiksa dengan permission class di server, bukan hanya dengan menyembunyikan tombol di template?
+
+Autentikasi menjawab "siapa pengirim request ini?", sedangkan otorisasi
+menjawab "bolehkah pengirim ini melakukan tindakan tersebut?". Di DRF keduanya
+dipisahkan. Authentication class, di proyek ini `SessionAuthentication`,
+membaca cookie session dan mengisi `request.user`; jika tidak ada session,
+pengguna diperlakukan sebagai anonim. Setelah itu permission class memutuskan
+izinnya. `IsPortfolioOwnerOrEditorOrReadOnly` mengizinkan `GET` untuk semua,
+`PUT`/`PATCH` untuk Editor dan superuser, serta `POST`/`DELETE` hanya untuk
+superuser. Endpoint star memakai `IsAuthenticated`, dan akun yang memberi star
+selalu diambil dari `request.user`. Pemeriksaan ini berjalan sebelum isi view.
+Karena `SessionAuthentication` tidak mengirim header `WWW-Authenticate`,
+request tulis dari guest dijawab `403`, bukan `401`.
+
+Menyembunyikan tombol hanya mengatur tampilan. Siapa pun tetap dapat mengirim
+request langsung, misalnya `fetch("/api/v1/experiences/3/", {method: "DELETE"})`
+dari Console, lewat `curl`, atau dari tab lama yang masih menampilkan tombol.
+Pada pengujian browser, saya mencabut status superuser di database ketika
+halaman pemilik masih terbuka. Tombol Delete masih terlihat, tetapi server
+menolak dengan `403` dan toast menampilkan pesan dari permission class. Test
+API juga memeriksa bahwa penolakan tidak mengubah isi database. Saat permission
+sengaja dilonggarkan untuk uji mutasi, test peran langsung gagal. Jadi,
+template mengatur pengalaman pengguna, sedangkan permission class di server
+yang benar-benar menjaga data.
+
+### 4. Jelaskan mengapa permintaan yang mengubah data tetap memerlukan token CSRF ketika API memakai SessionAuthentication! Mengapa test yang memakai force_authenticate tidak cukup untuk membuktikan bahwa perlindungan CSRF berjalan?
+
+Dengan `SessionAuthentication`, identitas pengguna dibawa oleh cookie session.
+Browser melampirkan cookie itu secara otomatis ke setiap request menuju
+domain portofolio, termasuk request yang dipicu oleh form atau script di situs
+lain. Tanpa CSRF, situs berbahaya dapat membuat browser pemilik yang masih
+login mengirim `DELETE` atau `PATCH` atas namanya. Token CSRF membuktikan
+bahwa request berasal dari halaman kita sendiri. Halaman Experience dan
+Achievement merender `{% csrf_token %}` agar cookie `csrftoken` tersedia untuk
+pengguna biasa dan Editor, lalu `getCookie("csrftoken")` mengirim nilainya
+lewat header `X-CSRFToken` pada setiap `POST`, `PUT`, `PATCH`, dan `DELETE`.
+View `@api_view` dibebaskan dari middleware CSRF Django, tetapi
+`SessionAuthentication` memeriksa ulang CSRF untuk method yang mengubah data
+dari pengguna yang terautentikasi lewat session. Saat saya coba, login lewat
+session lalu `POST` tanpa token menghasilkan
+`403 CSRF Failed: CSRF cookie not set.`, sedangkan `GET` tetap `200`.
+
+`force_authenticate` melewati proses autentikasi sepenuhnya: test client
+langsung menetapkan `request.user` tanpa session dan tanpa
+`SessionAuthentication`. Akibatnya pemeriksaan CSRF tidak pernah dijalankan.
+Dalam percobaan, `APIClient(enforce_csrf_checks=True)` yang memakai
+`force_authenticate` tetap berhasil `POST` dengan status `201` tanpa token sama
+sekali. Test seperti itu berguna untuk menguji permission, tetapi tidak
+membuktikan perlindungan CSRF. Karena itu,
+`test_session_write_without_csrf_token_is_rejected` memakai
+`APIClient(enforce_csrf_checks=True)` dan `.login()` agar session sungguhan
+terbentuk, lalu memastikan `POST`/`PATCH` tanpa token ditolak dan database
+tidak berubah. Pasangannya, `test_session_write_with_token_from_page_succeeds`,
+mengambil token dari cookie halaman sebagai Editor dan membuktikan `PATCH`
+dengan token berhasil.
+
 ## Progres pengembangan
 
 | Periode | Fokus | Hasil |
@@ -456,6 +654,9 @@ tempat data dipakai.
 | 14–19 September 2026 | Form dan data delivery | Root template bersama, halaman Experience terpisah, ModelForm, create, update, delete, modal konfirmasi, endpoint JSON, deserialisasi data, serta test untuk Experience, Project, dan Achievement. |
 | 19–28 September 2026 | Authentication dan authorization | Register, login, logout, session, cookie, empat peran akses, star/unstar untuk Experience, Project, dan Achievement, natural foreign keys, serta test authorization dan star. |
 | Tugas 5; verifikasi 5 Oktober 2026 | Interaktivitas AJAX | Daftar JSON manual, pencarian debounce, loading/empty/error/retry, modal tambah AJAX, CSRF, sanitasi, toast, dan refresh tanpa reload untuk Experience dan Achievement. Full suite lulus 114/114 test; tiga refleksi tentang debouncing, await, dan XSS ditambahkan. |
+| 6 Oktober – 3 November 2026 | Refactor dan settings | Views dipecah per fitur, template dan CSS per halaman; `DEBUG` mengikuti `PRODUCTION` dan `STATIC_ROOT` dikonfigurasi. |
+| 3–4 November 2026 | Tutorial 7 (DRF) | Upgrade ke Django 5.2 dan DRF 3.18; serializer, permission, API view, dan route `/api/v1/projects/`; halaman Projects memakai API; 13 test API. |
+| 6–7 November 2026 | Tugas 6 (DRF) | API Experience dan Achievement dengan matriks empat peran, halaman memakai API termasuk modal edit `PATCH`, 38 test API, dan empat refleksi. Dikerjakan per branch fitur dengan conventional commits; full suite `test main` lulus 168/168 test. |
 
 ## AI disclosure
 
@@ -487,6 +688,68 @@ tanpa reload, dan viewport mobile. Pengujian ini tidak menjamin semua bug atau
 perbedaan lingkungan deployment sudah teratasi. Saya mengelola branch, merge,
 dan commit; AI tidak membuat commit pada tahap Tugas 5 ini.
 
+#### Tutorial 7 dan Tugas 6
+
+Tools: Hermes Agent (aplikasi desktop) dengan model Claude (`claude-opus-5-5`).
+Strategi prompting yang saya pakai:
+
+- AI diminta membaca PDF resmi Tutorial 7 dan Tugas 6 terlebih dahulu, lalu
+  memetakan setiap checklist ke kondisi repository sebelum menulis kode.
+- Pekerjaan dibagi per tahap kecil. AI berhenti setelah setiap tahap,
+  melaporkan file yang berubah serta hasil verifikasi, lalu saya meninjau dan
+  membuat commit sendiri.
+- Keputusan desain diajukan sebagai pilihan, dan saya yang menentukan. Keputusan
+  saya: Tutorial 7 dikumpulkan persis sesuai contoh (API Projects khusus
+  pemilik), Tugas 6 diterapkan pada Experience dan Achievement, edit memakai
+  modal `PATCH`, serta Git memakai branch per fitur dengan conventional commits.
+  Branch dan merge saya buat sendiri.
+
+Bagian yang dibantu AI:
+
+- Tutorial 7: upgrade dependency, serializer Project, permission class, API
+  view, route, penggantian script halaman Projects, dan adaptasi 13 test
+  tutorial ke model saya (primary key integer, field `category`/`thumbnail`).
+- Tugas 6: `ExperienceSerializer`, `AchievementSerializer`, `StarInfoMixin`,
+  helper API bersama (`create_response`, `detail_response`, `toggle_star`),
+  endpoint `/api/v1/experiences/` dan `/api/v1/achievements/`, JavaScript dan
+  template halaman beserta modal edit, penyesuaian test lama yang mengunci
+  kontrak lama, serta 38 test di `main/tests_api_portfolio.py`.
+- Draf README ini, termasuk empat jawaban refleksi Tugas 6. Klaim pada jawaban
+  dicek dengan percobaan nyata (misalnya `force_authenticate` vs `.login()`
+  pada CSRF), tetapi draf tetap saya tinjau agar sesuai pemahaman saya.
+
+Verifikasi yang dilakukan selain menjalankan test:
+
+- probe matriks peran dengan `APITestCase` client di dalam transaksi yang
+  di-rollback;
+- pengujian Chrome headless untuk keempat peran pada salinan database dengan
+  akun sementara, yang dihapus setelah pengujian;
+- uji mutasi: permission, `strip_tags`, `IsAuthenticated`, `{% csrf_token %}`,
+  dan validasi tahun sengaja dirusak satu per satu untuk memastikan test benar-
+  benar gagal, lalu kode dipulihkan.
+
+Catatan kritis tentang keterbatasan AI selama tahap ini:
+
+- AI sempat menyarankan agar Editor boleh mengubah Projects lewat API, demi
+  konsistensi dengan halaman HTML. Setelah saya menanyakan apakah itu sesuai
+  Tutorial 7, AI membaca ulang PDF dan mengoreksi sarannya: tutorial
+  mensyaratkan Projects khusus pemilik dan ada test yang mengharapkan Editor
+  ditolak. Saran AI perlu dicek terhadap spesifikasi, bukan diterima begitu saja.
+- Saya sempat ingin mengumpulkan commit refactor lama sebagai bagian dari
+  Tutorial 7. AI menyarankan untuk tidak melakukannya karena isi dan tanggal
+  commit itu tidak sesuai materi tutorial, jadi commit tersebut hanya menjadi
+  fondasi.
+- Upgrade Django di folder OneDrive gagal di tengah jalan karena folder menjadi
+  read-only, sehingga Django terhapus sebagian dari virtual environment. AI
+  memperbaikinya, tetapi kejadian ini menunjukkan perintah otomatis tetap bisa
+  merusak environment lokal dan perlu dicek ulang.
+- Ke-38 test baru langsung lulus pada percobaan pertama. Karena test yang selalu
+  lulus belum tentu menguji apa pun, uji mutasi dilakukan untuk membuktikan
+  test tersebut bisa gagal.
+- Pengujian otomatis berjalan di lingkungan lokal. Deployment PWS, termasuk
+  `collectstatic`, `PRODUCTION=true`, dan instalasi dependency baru, tetap perlu
+  saya cek sendiri.
+
 ### Chat history
 
 Riwayat percakapan yang tersimpan selama pengembangan Tugas 2 sampai Tugas 5
@@ -506,6 +769,14 @@ redaksi otomatis dan penyamaran tambahan nilai kredensial. Riwayat lama tidak
 ditimpa, dan snapshot tidak mencakup percakapan setelah waktu ekspornya.
 Jumlah pesan, cakupan ekspor, serta checksum SHA-256 dicatat dalam
 [`manifest.jsonl`](ai-chat-history/manifest.jsonl).
+
+Percakapan Tutorial 7 dan Tugas 6 tersedia pada
+[`20261107_tutorial-7-and-tugas-6-development.md`](ai-chat-history/20261107_tutorial-7-and-tugas-6-development.md).
+Ekspor ini berasal dari satu sesi Hermes Agent, mulai 3 November 2026 hingga
+snapshot 7 November 2026, dan berisi 322 pesan (27 pesan dari saya). Selain
+redaksi otomatis, sisa potongan `SECRET_KEY` disamarkan secara manual.
+Snapshot diambil sebelum tahap dokumentasi selesai, sehingga penyusunan akhir
+README ini tidak tercakup di dalamnya.
 
 ### Keterbatasan AI
 
