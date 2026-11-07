@@ -7,7 +7,7 @@ def is_editor(user):
     return user.is_authenticated and user.groups.filter(name="Editor").exists()
 
 
-# API Projects: baca untuk semua, ubah hanya pemilik (Tutorial 07)
+# API Projects: baca untuk semua, ubah hanya pemilik 
 class IsPortfolioOwnerOrReadOnly(BasePermission):
     message = "Only the portfolio owner can change projects."
 
@@ -18,7 +18,7 @@ class IsPortfolioOwnerOrReadOnly(BasePermission):
         )
 
 
-# Experience & Achievement (Tugas 6): matriks empat peran dari Tugas 4
+# Experience & Achievement
 class IsPortfolioOwnerOrEditorOrReadOnly(BasePermission):
     message = "Only the portfolio owner can create or delete; editors can only update."
 
