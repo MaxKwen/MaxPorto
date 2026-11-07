@@ -13,7 +13,7 @@ def clean_text(value, *, required=False, label="This field"):
 
 
 class StarInfoMixin(serializers.Serializer):
-    """Informasi star dari Tugas 4 sebagai field hasil perhitungan (read-only)."""
+    """Informasi star dari sebagai field hasil perhitungan."""
 
     star_count = serializers.SerializerMethodField()
     is_starred = serializers.SerializerMethodField()
