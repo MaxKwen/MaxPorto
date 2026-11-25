@@ -1,9 +1,8 @@
 from django.db.models import Q
 from django.shortcuts import get_object_or_404
 from rest_framework import status
-from rest_framework.authentication import SessionAuthentication
 from rest_framework.decorators import (
-    api_view, authentication_classes, permission_classes,
+    api_view, permission_classes,
 )
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
@@ -56,7 +55,6 @@ def toggle_star(request, obj, serializer_class):
 # ---------- Projects (Tutorial 07): hanya pemilik yang boleh menulis ----------
 
 @api_view(["GET", "HEAD", "POST"])
-@authentication_classes([SessionAuthentication])
 @permission_classes([IsPortfolioOwnerOrReadOnly])
 def project_list(request):
     if request.method in ("GET", "HEAD"):
@@ -72,7 +70,6 @@ def project_list(request):
 
 
 @api_view(["GET", "HEAD", "PUT", "PATCH", "DELETE"])
-@authentication_classes([SessionAuthentication])
 @permission_classes([IsPortfolioOwnerOrReadOnly])
 def project_detail(request, project_id):
     project = get_object_or_404(
@@ -82,7 +79,6 @@ def project_detail(request, project_id):
 
 
 @api_view(["POST"])
-@authentication_classes([SessionAuthentication])
 @permission_classes([IsAuthenticated])
 def project_star(request, project_id):
     project = get_object_or_404(Project, pk=project_id)
@@ -92,7 +88,6 @@ def project_star(request, project_id):
 # ---------- Experience (Tugas 6): Editor juga boleh PUT/PATCH ----------
 
 @api_view(["GET", "HEAD", "POST"])
-@authentication_classes([SessionAuthentication])
 @permission_classes([IsPortfolioOwnerOrEditorOrReadOnly])
 def experience_list(request):
     if request.method in ("GET", "HEAD"):
@@ -116,7 +111,6 @@ def experience_list(request):
 
 
 @api_view(["GET", "HEAD", "PUT", "PATCH", "DELETE"])
-@authentication_classes([SessionAuthentication])
 @permission_classes([IsPortfolioOwnerOrEditorOrReadOnly])
 def experience_detail(request, experience_id):
     experience = get_object_or_404(
@@ -126,7 +120,6 @@ def experience_detail(request, experience_id):
 
 
 @api_view(["POST"])
-@authentication_classes([SessionAuthentication])
 @permission_classes([IsAuthenticated])
 def experience_star(request, experience_id):
     experience = get_object_or_404(Experience, pk=experience_id)
@@ -136,7 +129,6 @@ def experience_star(request, experience_id):
 # ---------- Achievement (Tugas 6): Editor juga boleh PUT/PATCH ----------
 
 @api_view(["GET", "HEAD", "POST"])
-@authentication_classes([SessionAuthentication])
 @permission_classes([IsPortfolioOwnerOrEditorOrReadOnly])
 def achievement_list(request):
     if request.method in ("GET", "HEAD"):
@@ -159,7 +151,6 @@ def achievement_list(request):
 
 
 @api_view(["GET", "HEAD", "PUT", "PATCH", "DELETE"])
-@authentication_classes([SessionAuthentication])
 @permission_classes([IsPortfolioOwnerOrEditorOrReadOnly])
 def achievement_detail(request, achievement_id):
     achievement = get_object_or_404(
@@ -169,8 +160,18 @@ def achievement_detail(request, achievement_id):
 
 
 @api_view(["POST"])
-@authentication_classes([SessionAuthentication])
 @permission_classes([IsAuthenticated])
 def achievement_star(request, achievement_id):
     achievement = get_object_or_404(Achievement, pk=achievement_id)
     return toggle_star(request, achievement, AchievementSerializer)
+
+
+# ---------- Token auth (Tutorial 10) ----------
+
+@api_view(["POST"])
+@permission_classes([IsAuthenticated])
+def api_logout(request):
+    """Cabut token milik pemanggil; login session tidak punya request.auth token."""
+    if request.auth is not None:
+        request.auth.delete()
+    return Response(status=status.HTTP_204_NO_CONTENT)

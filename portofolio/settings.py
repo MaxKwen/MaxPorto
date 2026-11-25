@@ -44,13 +44,17 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'main.apps.MainConfig',
+    'corsheaders',
     'rest_framework',
+    'rest_framework.authtoken',
 ]
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
+    # CORS harus sebelum CommonMiddleware agar header CORS ikut di semua respons
+    'corsheaders.middleware.CorsMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
@@ -154,3 +158,14 @@ MAILERS = {
 
 # CSRF
 CSRF_TRUSTED_ORIGINS = [ "https://maximus-quinn-maxporto.pws.cs.ui.ac.id",]
+
+# Tutorial 10: web memakai session, klien mobile memakai token
+REST_FRAMEWORK = {
+    "DEFAULT_AUTHENTICATION_CLASSES": [
+        "rest_framework.authentication.SessionAuthentication",
+        "rest_framework.authentication.TokenAuthentication",
+    ],
+}
+
+# CORS untuk Flutter Web lokal; di production (PWS) dimatikan
+CORS_ALLOW_ALL_ORIGINS = not PRODUCTION
